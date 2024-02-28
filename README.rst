@@ -1,8 +1,6 @@
 pytetwild
 #########
 
-**This repository is not ready and the content here is a placeholder.**
-
 |pypi| |MPL|
 
 .. |pypi| image:: https://img.shields.io/pypi/v/pytetwild.svg?logo=python&logoColor=white
