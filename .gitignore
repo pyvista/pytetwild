@@ -1,0 +1,43 @@
+# Compiled source #
+###################
+*.pyc
+*.pyd
+*.so
+*.o
+__pycache__/
+
+# OS generated files #
+######################
+.fuse_hidden*
+*~
+
+# Pip generated folders #
+#########################
+*.egg-info/
+build/
+dist/
+
+# MISC
+.mypy_cache
+
+# Mac
+.DS_Store
+**/.DS_Store
+
+# emacs
+*#
+.#
+flycheck*
+
+# vim
+*.swp
+
+# PyCharm
+.idea/
+
+# virtual environments
+venv/
+.venv/
+
+# VSCode
+.vscode/
