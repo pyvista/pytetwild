@@ -29,6 +29,19 @@ jobs:
           pip install twine
           twine check dist/*
 
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install \
+          libblas-dev \
+          libboost-filesystem-dev \
+          libboost-system-dev \
+          libboost-thread-dev \
+          libglu1-mesa-dev \
+          libsuitesparse-dev \
+          xorg-dev \
+          ccache
+
       - name: Install and test
         run: |
           pip install --find-links=dist pytetwild[dev]
