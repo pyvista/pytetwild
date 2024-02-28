@@ -1,4 +1,4 @@
-"""Setup for pyminiply."""
+"""Setup for pytetwild."""
 from io import open as io_open
 import os
 import sys
