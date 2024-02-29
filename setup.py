@@ -26,7 +26,10 @@ setup(
     zip_safe=False,
     include_package_data=False,
     cmake_args=cmake_args + ['-DCMAKE_BUILD_TYPE=' + cfg],
-    cmake_install_dir="src/",
+    cmake_install_dir="src/pytetwild",
     cmake_install_target='install',
     install_requires="numpy",
+    extras_require={
+       'dev': ['pytest'],
+   },
 )
