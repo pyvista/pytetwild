@@ -45,8 +45,10 @@ jobs:
       - name: Install inplace
         run: |
           pip install -e .[dev]
-          ls -R
-          pytest -x
+          ls src/pytetwild
+
+      - name: Test
+        run: pytest -vv
 
       - uses: actions/upload-artifact@v4
         with:
