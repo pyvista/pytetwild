@@ -42,10 +42,17 @@ jobs:
           xorg-dev \
           ccache
 
-      - name: Install inplace
+      - name: Build wheel
         run: |
-          pip install -e .[dev]
-          ls src/pytetwild
+          pipx run build --wheel
+
+      - name: Validate wheel
+        run: |
+          pip install twine
+          twine check dist/*
+
+      - name: Install from wheel
+        run: pip install --find-links=dist/ pytetwild[dev]
 
       - name: Test
         run: pytest -vv
