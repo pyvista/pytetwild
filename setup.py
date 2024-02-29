@@ -1,8 +1,7 @@
 """Setup for pytetwild."""
 import sys
 
-from setuptools import setup, find_packages
-from setuptools.command.test import test as TestCommand
+from setuptools import find_packages
 
 try:
     from skbuild import setup
@@ -26,7 +25,7 @@ setup(
     package_dir={'':'src'},
     zip_safe=False,
     include_package_data=False,
-    cmake_args=cmake_args,
+    cmake_args=cmake_args=cmake_args + ['-DCMAKE_BUILD_TYPE=' + cfg],
     cmake_install_dir="src/",
     cmake_install_target='install',
     install_requires="numpy",
