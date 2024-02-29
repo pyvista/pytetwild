@@ -5,7 +5,7 @@ project(fTetWildWrapper)
 set(fTetWild_DIR "${CMAKE_CURRENT_SOURCE_DIR}/src/fTetWild")
 
 # Include the fTetWild project as a subdirectory
-add_subdirectory(${fTetWild_DIR})
+add_subdirectory(${fTetWild_DIR} EXCLUDE_FROM_ALL)
 
 # Define your shared library that wraps the fTetWild code
 add_library(PyfTetWildWrapper SHARED "${CMAKE_CURRENT_SOURCE_DIR}/src/FTetWildWrapper.cpp")
