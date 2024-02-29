@@ -1,62 +1,59 @@
 #include <floattetwild/Mesh.hpp>
+#include <floattetwild/FloatTetDelaunay.h>
+#include <floattetwild/AABBWrapper.h>
 #include <floattetwild/MeshIO.hpp>
-#include <floattetwild/FloatTetwild.h>
+
 #include <Eigen/Dense>
+#include <vector>
 
-// Function to generate tetrahedral mesh using fTetWild
-// vertices: Input array of surface vertices, each vertex is represented by 3 consecutive doubles (x, y, z)
-// numVertices: Number of vertices in the input surface mesh
-// faces: Input array of surface triangle faces, each face is represented by 3 consecutive integers (indices to vertices)
-// numFaces: Number of faces in the input surface mesh
-// tetPoints: Output array of tetrahedral mesh vertices, each vertex is represented by 3 consecutive doubles (x, y, z)
-// numTetPoints: Output number of vertices in the tetrahedral mesh
-// tetCells: Output array of tetrahedral mesh cells, each cell is represented by 4 consecutive integers (indices to tetPoints)
-// numTetCells: Output number of cells in the tetrahedral mesh
-void generateTetMesh(const double* vertices, int numVertices, const int* faces, int numFaces, double** tetPoints, int* numTetPoints, int** tetCells, int* numTetCells) {
-    // Convert input arrays to Eigen matrices for fTetWild
-    Eigen::MatrixXd V(numVertices, 3);
-    Eigen::MatrixXi F(numFaces, 3);
-    for(int i = 0; i < numVertices; ++i) {
-        V(i, 0) = vertices[i * 3];
-        V(i, 1) = vertices[i * 3 + 1];
-        V(i, 2) = vertices[i * 3 + 2];
-    }
-    for(int i = 0; i < numFaces; ++i) {
-        F(i, 0) = faces[i * 3];
-        F(i, 1) = faces[i * 3 + 1];
-        F(i, 2) = faces[i * 3 + 2];
+// You must include other necessary headers and namespaces used in your project
+
+void tetrahedralizeAndWriteMesh(const std::vector<Eigen::Vector3d>& vertices,
+                                const std::vector<Eigen::Vector3i>& faces,
+                                const std::string& outputPath) {
+    using namespace floatTetWild;
+    using namespace Eigen;
+
+    // Convert input vertices and faces to the format expected by FloatTetWild
+    std::vector<Vector3> input_vertices(vertices.size());
+    for (size_t i = 0; i < vertices.size(); ++i) {
+        input_vertices[i] = vertices[i].cast<Scalar>();
     }
 
-    // Parameters for tetrahedralization
-    floatTetWild::Parameters params;
-    // Set any required parameters here
-    // For example, params.ideal_edge_length = 1.0;
+    std::vector<Vector3i> input_faces(faces.begin(), faces.end());
 
-    // Mesh object to store the output tetrahedral mesh
-    floatTetWild::Mesh mesh;
+    // Initialize placeholders for flags and epsr_flags, if needed
+    std::vector<int> flags;
+    std::vector<double> epsr_flags;
 
-    // Generate the tetrahedral mesh
-    floatTetWild::tetrahedralize(V, F, mesh, params);
+    // Initialize GEO::Mesh and load the mesh data into it
+    GEO::Mesh geo_mesh;
+    MeshIO::load_mesh(input_vertices, input_faces, geo_mesh, flags, epsr_flags);
 
-    // Extract tetrahedral mesh vertices and cells
-    auto& vertices_out = mesh.get_vertices();
-    auto& tets_out = mesh.get_tets();
+    // Initialize AABBWrapper with the loaded GEO::Mesh for collision checking
+    AABBWrapper tree(geo_mesh);
 
-    // Assuming memory for tetPoints and tetCells is allocated externally
-    *numTetPoints = vertices_out.size();
-    *numTetCells = tets_out.size();
+    // Create an instance of Mesh to hold the output tetrahedral mesh
+    Mesh mesh;
 
-    for(int i = 0; i < vertices_out.size(); ++i) {
-        (*tetPoints)[i * 3] = vertices_out[i][0];
-        (*tetPoints)[i * 3 + 1] = vertices_out[i][1];
-        (*tetPoints)[i * 3 + 2] = vertices_out[i][2];
-    }
+    // Prepare a vector to track the insertion status of faces
+    std::vector<bool> is_face_inserted(input_faces.size(), false);
 
-    for(int i = 0; i < tets_out.size(); ++i) {
-        if(tets_out[i].is_removed) continue; // Skip removed tets
-        (*tetCells)[i * 4] = tets_out[i][0];
-        (*tetCells)[i * 4 + 1] = tets_out[i][1];
-        (*tetCells)[i * 4 + 2] = tets_out[i][2];
-        (*tetCells)[i * 4 + 3] = tets_out[i][3];
-    }
+    // Perform tetrahedralization
+    FloatTetDelaunay::tetrahedralize(input_vertices, input_faces, tree, mesh, is_face_inserted);
+
+    // Write the tetrahedralized mesh to a file
+    std::vector<Scalar> colors; // Optional: For visualizing quality or other metrics
+    MeshIO::write_mesh(outputPath, mesh, false, colors);
+}
+
+// Example usage:
+int main() {
+    std::vector<Eigen::Vector3d> vertices = {/* Fill with your vertices */};
+    std::vector<Eigen::Vector3i> faces = {/* Fill with your faces */};
+    std::string outputPath = "output_mesh.msh";
+
+    tetrahedralizeAndWriteMesh(vertices, faces, outputPath);
+
+    return 0;
 }
