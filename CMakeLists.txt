@@ -18,3 +18,5 @@ target_link_libraries(PyfTetWildWrapper PRIVATE FloatTetwild)
 
 # Specify any additional compile features or definitions as needed
 target_compile_features(PyfTetWildWrapper PUBLIC cxx_std_11)
+
+install(TARGETS PyfTetWildWrapper LIBRARY DESTINATION {CMAKE_INSTALL_PREFIX})
