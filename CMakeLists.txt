@@ -2,13 +2,13 @@ cmake_minimum_required(VERSION 3.8)
 project(fTetWildWrapper)
 
 # Set the path to the fTetWild project
-set(fTetWild_DIR "${CMAKE_CURRENT_SOURCE_DIR}/fTetWild")
+set(fTetWild_DIR "${CMAKE_CURRENT_SOURCE_DIR}/src/fTetWild")
 
 # Include the fTetWild project as a subdirectory
 add_subdirectory(${fTetWild_DIR})
 
 # Define your shared library that wraps the fTetWild code
-add_library(PyfTetWildWrapper SHARED FTetWildWrapper.cpp)
+add_library(PyfTetWildWrapper SHARED "${CMAKE_CURRENT_SOURCE_DIR}/src/FTetWildWrapper.cpp")
 
 # Include directories from fTetWild required for the wrapper
 target_include_directories(PyfTetWildWrapper PUBLIC ${fTetWild_DIR}/src)

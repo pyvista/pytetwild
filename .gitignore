@@ -41,3 +41,6 @@ venv/
 
 # VSCode
 .vscode/
+
+# skbuild
+_skbuild/
