@@ -1,7 +1,7 @@
 import numpy as np
 import pyvista as pv
 import pytest
-from your_module import tetrahedralize_pv, tetrahedralize  # Replace 'your_module' with the name of your Python file
+from pytetwild import tetrahedralize_pv, tetrahedralize  # Replace 'your_module' with the name of your Python file
 
 # Parameterized test for tetrahedralize_pv function
 @pytest.mark.parametrize("mesh_generator", [pv.Icosphere, pv.examples.download_bunny_coarse])
