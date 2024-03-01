@@ -11,9 +11,7 @@ add_subdirectory(${pybind11_DIR})
 # Include the fTetWild project as a subdirectory
 add_subdirectory(${fTetWild_DIR} EXCLUDE_FROM_ALL)
 
-# Define your shared library that wraps the fTetWild code
-pybind11_add_module(PyfTetWildWrapper "${CMAKE_CURRENT_SOURCE_DIR}/src/FTetWildWrapper.cpp")
-
+pybind11_add_module(PyfTetWildWrapper MODULE "${CMAKE_CURRENT_SOURCE_DIR}/src/FTetWildWrapper.cpp")
 
 # Include directories from fTetWild required for the wrapper
 target_include_directories(PyfTetWildWrapper PUBLIC ${fTetWild_DIR}/src)
