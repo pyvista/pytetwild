@@ -1,3 +1,4 @@
+"""Wrapper for fTetWild."""
 import numpy as np
 import pyvista as pv
 from pytetwild import PyfTetWildWrapper
@@ -6,7 +7,7 @@ from typing import Tuple
 
 def tetrahedralize_pv(mesh: pv.PolyData) -> pv.UnstructuredGrid:
     """
-    Converts a PyVista surface mesh to a PyVista unstructured grid.
+    Convert a PyVista surface mesh to a PyVista unstructured grid.
 
     Parameters
     ----------
@@ -37,15 +38,13 @@ def tetrahedralize_pv(mesh: pv.PolyData) -> pv.UnstructuredGrid:
     return pv.UnstructuredGrid(cells, cell_types, tetrahedral_mesh_vertices)
 
 
-def tetrahedralize(
-    vertices: np.ndarray, faces: np.ndarray
-) -> Tuple[np.ndarray, np.ndarray]:
+def tetrahedralize(vertices: np.ndarray, faces: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
     """
-    Converts mesh vertices and faces to a tetrahedral mesh using PyfTetWildWrapper.
+    Convert mesh vertices and faces to a tetrahedral mesh.
 
     Parameters
     ----------
-    vertices : np.ndarray
+    vertices : np.ndarray[double]
         The vertices of the mesh.
     faces : np.ndarray
         The faces of the mesh.
