@@ -44,8 +44,6 @@ jobs:
 
       - name: Build wheels
         uses: pypa/cibuildwheel@v2.16.5
-        env:  # https://github.com/wildmeshing/fTetWild/issues/10
-          CIBW_ENVIRONMENT_PASS_LINUX: CMAKE_C_FLAGS=-mavx CMAKE_CXX_FLAGS=-mavx
 
       - name: List generated wheels
         run: ls ./wheelhouse/*
