@@ -44,3 +44,15 @@ venv/
 
 # skbuild
 _skbuild/
+
+# cmake
+.ninja_deps
+.ninja_log
+CMakeCache.txt
+CMakeFiles/
+CMakeInit.txt
+CPackConfig.cmake
+CPackSourceConfig.cmake
+build.ninja
+cmake_install.cmake
+lib/
