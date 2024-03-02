@@ -4,13 +4,39 @@ Thank you for considering contributions to our project! Here's how you can help:
 
 ## Setting Up for Development
 
-We're using [scikit-build-core](https://github.com/scikit-build/scikit-build-core) for our build system and building using cmake. You'll need a handful of system dependencies to build locally. On Linux, install them with:
+We're using [scikit-build-core](https://github.com/scikit-build/scikit-build-core) for our build system and building using ``cmake``. You'll need a handful of system dependencies to build locally.
+
+
+### Linux
+On Linux, install the following OS dependencies with:
 
 ```
 sudo apt-get update
-sudo apt-get install libblas-dev libboost-filesystem-dev libboost-system-dev libboost-thread-dev libglu1-mesa-dev libsuitesparse-dev xorg-dev ccache
+sudo apt-get install libblas-dev libboost-filesystem-dev libboost-system-dev libboost-thread-dev libglu1-mesa-dev libsuitesparse-dev xorg-dev ccache -y
 ```
 
+### Windows
+
+For contributors using Windows, we also have a setup process to ensure you can compile and test changes locally. Here's how to set up your development environment on Windows:
+
+1. **Install Miniconda**: We use Miniconda to manage dependencies. Install it from [here](https://docs.anaconda.com/free/miniconda/index.html).
+
+2. **Setup Miniconda and Install Dependencies**:
+   ```
+   conda install -c conda-forge mpir -y
+   ```
+
+3. **Configure Environment Variables**:
+   Set the required environment variables for the build. This assumes PowerShell.
+
+   ```
+   $Env:GMP_INC = "C:\Miniconda\Library\include"
+   $Env:GMP_LIB = "C:\Miniconda\Library\lib"
+   ```
+
+   Note: You may need to adjust these paths depending on if you use a non-global conda environment.
+
+### Installation
 To install the library in editable mode:
 
   1. Clone the repository:
