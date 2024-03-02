@@ -26,6 +26,22 @@ jobs:
         with:
           submodules: true
 
+      - name: Setup Miniconda
+        if: runner.os == 'Windows'
+        uses: conda-incubator/setup-miniconda@v3.0.3
+
+      - name: Install Dependencies (Windows)
+        if: runner.os == 'Windows'
+        shell: powershell
+        run: |
+          conda install -c conda-forge mpir -y
+
+      - name: Set env
+        run: |
+          echo "appdata=$env:LOCALAPPDATA" >> ${env:GITHUB_ENV}
+          echo "GMP_INC=C:\Miniconda\Library\include" >> ${env:GITHUB_ENV}
+          echo "GMP_LIB=C:\Miniconda\Library\lib" >> ${env:GITHUB_ENV}
+
       - name: Build wheels
         uses: pypa/cibuildwheel@v2.16.5
 
