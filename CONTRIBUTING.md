@@ -4,8 +4,15 @@ Thank you for considering contributions to our project! Here's how you can help:
 
 ## Setting Up for Development
 
-- We're using [scikit-build-core](https://github.com/scikit-build/scikit-build-core) for our build system.
-- To set up the project in editable mode:
+We're using [scikit-build-core](https://github.com/scikit-build/scikit-build-core) for our build system and building using cmake. You'll need a handful of system dependencies to build locally. On Linux, install them with:
+
+```
+sudo apt-get update
+sudo apt-get install libblas-dev libboost-filesystem-dev libboost-system-dev libboost-thread-dev libglu1-mesa-dev libsuitesparse-dev xorg-dev ccache
+```
+
+To install the library in editable mode:
+
   1. Clone the repository:
      ```
      git clone https://github.com/pyvista/pytetwild

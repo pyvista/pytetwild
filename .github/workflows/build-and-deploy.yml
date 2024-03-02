@@ -21,14 +21,6 @@ jobs:
         with:
           submodules: true
 
-      - name: Build
-        run: pipx run build --sdist
-
-      - name: Validate
-        run: |
-          pip install twine
-          twine check dist/*
-
       - name: Install system dependencies
         run: |
           sudo apt-get update
@@ -42,16 +34,16 @@ jobs:
           xorg-dev \
           ccache
 
-      - name: Build wheel
+      - name: Build source distribution
         run: |
-          pipx run build --wheel
+          pipx run build --sdist
 
-      - name: Validate wheel
+      - name: Validate
         run: |
           pip install twine
           twine check dist/*
 
-      - name: Install from wheel
+      - name: Install from dist/
         run: pip install --find-links=dist/ pytetwild[dev]
 
       - name: Test
