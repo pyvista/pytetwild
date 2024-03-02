@@ -49,7 +49,7 @@ test-command = "pytest {project}/tests -v"
 before-all = "yum install gmp gmp-devel -y"
 
 [tool.cibuildwheel.windows]
-before-build = "python -c \"import os; file_path = 'build/CMakeCache.txt'; try: os.remove(file_path) except FileNotFoundError: pass\""
+before-build = "python -c \"import os; file_path = 'build/CMakeCache.txt'; os.remove(file_path) if os.path.exists(file_path) else None\""
 
 [tool.cibuildwheel.macos]
 before-all = "brew install suite-sparse ccache gmp"
