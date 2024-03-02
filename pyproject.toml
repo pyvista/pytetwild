@@ -9,8 +9,11 @@ description = "Python wrapper of fTetWild"
 readme = { file = "README.rst", content-type = "text/x-rst" }
 authors = [{ name = "Alex Kaszynski", email = "akascap@gmail.com" }]
 dependencies = ["numpy"]
-optional-dependencies = { dev = ["pytest"] }
 dynamic = ["classifiers", "urls", "license"]
+
+[project.optional-dependencies]
+all = ['pyvista']
+dev = ["pytest", "pre-commit", "pyvista"]
 
 [tool.scikit-build]
 cmake.build-type = "Release"
