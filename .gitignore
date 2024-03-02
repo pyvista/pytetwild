@@ -56,3 +56,6 @@ CPackSourceConfig.cmake
 build.ninja
 cmake_install.cmake
 lib/
+
+# cibuildwheel
+wheelhouse

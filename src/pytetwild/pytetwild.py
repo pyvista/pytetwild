@@ -1,11 +1,14 @@
 """Wrapper for fTetWild."""
+import warnings
 import numpy as np
-import pyvista as pv
 from pytetwild import PyfTetWildWrapper
-from typing import Tuple
+from typing import Tuple, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    import pyvista as pv
 
 
-def tetrahedralize_pv(mesh: pv.PolyData) -> pv.UnstructuredGrid:
+def tetrahedralize_pv(mesh: "pv.PolyData") -> "pv.UnstructuredGrid":
     """
     Convert a PyVista surface mesh to a PyVista unstructured grid.
 
@@ -19,6 +22,20 @@ def tetrahedralize_pv(mesh: pv.PolyData) -> pv.UnstructuredGrid:
     pv.UnstructuredGrid
         The converted unstructured grid.
     """
+    try:
+        import pyvista as pv
+    except:
+        raise ModuleNotFoundError(
+            "Install PyVista to use this feature with:\n\n" "pip install pytetwild[all]"
+        )
+
+    if not mesh.is_all_triangles:
+        warnings.warn(
+            "Input mesh is not all triangles. Either call `.triangulate()`"
+            " beforehand to suppress this warning or use an all triangle mesh."
+        )
+        mesh = mesh.triangulate()
+
     vertices = np.array(mesh.points, dtype=np.float64)
     faces = np.array(mesh.faces.reshape((-1, 4))[:, 1:4], dtype=np.int32)
 

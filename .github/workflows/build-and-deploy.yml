@@ -26,20 +26,6 @@ jobs:
         with:
           submodules: true
 
-      - name: Install system dependencies
-        if: runner.os == 'Linux'
-        run: |
-          sudo apt-get update
-          sudo apt-get install \
-          libblas-dev \
-          libboost-filesystem-dev \
-          libboost-system-dev \
-          libboost-thread-dev \
-          libglu1-mesa-dev \
-          libsuitesparse-dev \
-          xorg-dev \
-          ccache
-
       - name: Build wheels
         uses: pypa/cibuildwheel@v2.16.5
 
