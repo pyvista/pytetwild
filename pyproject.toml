@@ -1,12 +1,21 @@
 [build-system]
-requires = [
-    "setuptools>=42",
-    "wheel",
-    "cmake>=3.18",
-    "scikit-build>=0.13",
-    "ninja>=1.10.0",
-]
-build-backend = "setuptools.build_meta"
+requires = ["scikit-build-core"]
+build-backend = "scikit_build_core.build"
+
+[project]
+name = "pytetwild"
+version = "0.1.dev0"
+description = "Python wrapper of fTetWild"
+readme = { file = "README.rst", content-type = "text/x-rst" }
+authors = [{ name = "Alex Kaszynski", email = "akascap@gmail.com" }]
+dependencies = ["numpy"]
+optional-dependencies = { dev = ["pytest"] }
+dynamic = ["classifiers", "urls", "license"]
+
+[tool.scikit-build]
+cmake.build-type = "Release"
+editable.mode = "inplace"
+build-dir = "./build"
 
 [tool.pytest.ini_options]
 testpaths = 'tests'
