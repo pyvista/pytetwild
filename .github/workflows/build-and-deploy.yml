@@ -26,17 +26,22 @@ jobs:
         with:
           submodules: true
 
-      - name: Setup Miniconda
+      - name: Setup Miniconda (Windows)
         if: runner.os == 'Windows'
         uses: conda-incubator/setup-miniconda@v3.0.3
 
       - name: Install Dependencies (Windows)
         if: runner.os == 'Windows'
         shell: powershell
-        run: |
-          conda install -c conda-forge mpir -y
+        run: conda install -c conda-forge mpir -y
 
-      - name: Set env
+      - name: Install Dependencies (Windows)
+        if: runner.os == 'Windows'
+        shell: powershell
+        run: Get-ChildItem -Path C:\Miniconda -Recurse -Filter gmp.lib
+
+      - name: Set env (Windows)
+        if: runner.os == 'Windows'
         run: |
           echo "appdata=$env:LOCALAPPDATA" >> ${env:GITHUB_ENV}
           echo "GMP_INC=C:\Miniconda\Library\include" >> ${env:GITHUB_ENV}

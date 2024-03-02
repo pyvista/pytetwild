@@ -154,8 +154,9 @@ PYBIND11_MODULE(PyfTetWildWrapper, m) {
         // function
         GEO::vector<double> vertices_vec = array_to_geo_vector(vertices);
         GEO::vector<geo_index_t> faces_vec = array_to_geo_vector(faces);
-        auto [vertices_result, tetrahedra_result] =
-            tetrahedralize(vertices_vec, faces_vec);
+        auto result = tetrahedralize(vertices_vec, faces_vec);
+        auto vertices_result = result.first;
+        auto tetrahedra_result = result.second;
         py::print("Tetrahedralization complete.");
 
         // Convert results back to numpy arrays

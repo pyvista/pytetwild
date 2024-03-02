@@ -22,5 +22,15 @@ target_include_directories(PyfTetWildWrapper PUBLIC ${fTetWild_DIR}/src)
 target_link_libraries(PyfTetWildWrapper PRIVATE FloatTetwild)
 target_compile_features(PyfTetWildWrapper PUBLIC cxx_std_11)
 
-install(TARGETS PyfTetWildWrapper LIBRARY DESTINATION ./pytetwild)
+if(WIN32)
+    set_target_properties(PyfTetWildWrapper PROPERTIES SUFFIX ".pyd")
+    foreach(OUTPUTCONFIG ${CMAKE_CONFIGURATION_TYPES})
+        string(TOUPPER ${OUTPUTCONFIG} OUTPUTCONFIG_UPPER)
+        set_target_properties(PyfTetWildWrapper PROPERTIES
+            RUNTIME_OUTPUT_DIRECTORY_${OUTPUTCONFIG_UPPER} "${CMAKE_CURRENT_SOURCE_DIR}/src/pytetwild"
+            LIBRARY_OUTPUT_DIRECTORY_${OUTPUTCONFIG_UPPER} "${CMAKE_CURRENT_SOURCE_DIR}/src/pytetwild"
+        )
+    endforeach()
+endif()
 
+install(TARGETS PyfTetWildWrapper LIBRARY DESTINATION ./pytetwild)
