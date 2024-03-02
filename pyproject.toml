@@ -14,8 +14,8 @@ dynamic = ["classifiers", "urls", "license"]
 
 [tool.scikit-build]
 cmake.build-type = "Release"
-editable.mode = "inplace"
 build-dir = "./build"
+editable.mode = "inplace"
 
 [tool.pytest.ini_options]
 testpaths = 'tests'

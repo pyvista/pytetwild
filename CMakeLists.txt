@@ -1,5 +1,6 @@
 cmake_minimum_required(VERSION 3.15...3.26)
 project(fTetWildWrapper)
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ./src/pytetwild)
 
 # Set the path to the fTetWild project
 set(fTetWild_DIR "${CMAKE_CURRENT_SOURCE_DIR}/src/fTetWild")
@@ -22,3 +23,4 @@ target_link_libraries(PyfTetWildWrapper PRIVATE FloatTetwild)
 target_compile_features(PyfTetWildWrapper PUBLIC cxx_std_11)
 
 install(TARGETS PyfTetWildWrapper LIBRARY DESTINATION ./pytetwild)
+
