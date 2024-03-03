@@ -10,13 +10,16 @@ from pytetwild import (
 )  # Replace 'your_module' with the name of your Python file
 
 THIS_PATH = os.path.dirname(os.path.abspath(__file__))
+
+
 @pytest.fixture
 def default_test_data():
     data = {
         "input": pv.read(os.path.join(THIS_PATH, "test_data/test_surf.ply")),
-        "output": pv.read(os.path.join(THIS_PATH, "test_data/test_tets.msh"))
+        "output": pv.read(os.path.join(THIS_PATH, "test_data/test_tets.msh")),
     }
     return data
+
 
 # Parameterized test for tetrahedralize_pv function
 @pytest.mark.parametrize("mesh_generator", [pv.Icosphere, pv.examples.download_bunny_coarse])
@@ -28,7 +31,7 @@ def test_tetrahedralize_pv(mesh_generator):
     ), "The result should be a PyVista UnstructuredGrid"
     assert result.n_cells > 0, "The resulting mesh should have more than 0 cells"
     assert result.n_points > 0, "The resulting mesh should have more than 0 points"
-    
+
 
 # Parameterized test for tetrahedralize function
 @pytest.mark.parametrize("mesh_generator", [pv.Icosphere, pv.examples.download_bunny_coarse])
@@ -55,19 +58,26 @@ def _sample_points_vtk(mesh_pv, dist_btw_pts=0.01):
     points_sampled = pv.PolyData(point_sampler.GetOutput()).points
     return points_sampled
 
+
 def _symmetric_surf_dist(pts0, pts1):
     d_kdtree0, _ = KDTree(pts0).query(pts1)
     d_kdtree1, _ = KDTree(pts1).query(pts0)
-    return (np.mean(d_kdtree0) + np.mean(d_kdtree1))/2
+    return (np.mean(d_kdtree0) + np.mean(d_kdtree1)) / 2
 
-@pytest.mark.parametrize("mesh_generator", [pv.Icosphere]) # pv.examples.download_bunny_coarse is not closed, so select_enclosed_points fails
+
+@pytest.mark.parametrize(
+    "mesh_generator", [pv.Icosphere]
+)  # pv.examples.download_bunny_coarse is not closed, so select_enclosed_points fails
 def test_output_points_enclosed(mesh_generator):
     input_pv = mesh_generator()
     py_output_pv = tetrahedralize_pv(input_pv)
     additional_input_scaling = 0.01
     enclosed_pv = py_output_pv.select_enclosed_points(input_pv.scale(1 + additional_input_scaling))
     enclosed_ratio = enclosed_pv.point_data["SelectedPoints"].sum() / input_pv.points.shape[0]
-    assert enclosed_ratio > 0.99, "all output vertices should be within some threshold of the input surf"
+    assert (
+        enclosed_ratio > 0.99
+    ), "all output vertices should be within some threshold of the input surf"
+
 
 def test_default_output_surf_dist(default_test_data):
     input_pv = default_test_data["input"]
