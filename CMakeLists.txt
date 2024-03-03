@@ -2,18 +2,9 @@ cmake_minimum_required(VERSION 3.15...3.26)
 project(fTetWildWrapper)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ./src/pytetwild)
 
-# https://github.com/wildmeshing/fTetWild/issues/10
-if(UNIX AND NOT APPLE)
-  include(CheckCXXCompilerFlag)
-  CHECK_CXX_COMPILER_FLAG("-dumpversion" COMPILER_SUPPORTS_DUMPVERSION)
-  if(COMPILER_SUPPORTS_DUMPVERSION)
-    execute_process(COMMAND ${CMAKE_CXX_COMPILER} -dumpversion OUTPUT_VARIABLE GCC_VERSION)
-    if(GCC_VERSION VERSION_LESS 11.0)
-       # Use -mavx flag for C and C++ compilers instead of -mavx2
-       set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -mavx")
-       set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mavx")
-    endif()
-  endif()
+if($ENV{USE_MAVX})
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -mavx")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mavx")
 endif()
 
 # Set the path to the fTetWild project
