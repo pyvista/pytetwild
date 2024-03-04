@@ -52,6 +52,11 @@ To install the library in editable mode:
      pip install -e .[dev]
      ```
 
+     **Note:** On windows, you'll need to copy the `mpir.dll` to your source directory with:
+     ```
+     python -c "import shutil, os; shutil.copy(os.path.join(os.getenv('GMP_LIB'), '..', 'bin', 'mpir.dll'), './src/pytetwild')"
+     ```
+
 ## Code Style and Quality
 
 - **Documentation**: Follow the `numpydoc` style for docstrings.

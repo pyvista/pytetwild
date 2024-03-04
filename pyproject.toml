@@ -41,7 +41,7 @@ testpaths = 'tests'
 [tool.cibuildwheel]
 archs = ["auto64"]  # 64-bit only
 # build = "cp38-* cp39-* cp310-* cp311-* cp312-*"  # Only build Python 3.8-3.12 wheels
-build = "cp311-* cp312-*"  # Only build Python 3.8-3.12 wheels
+build = "cp310-*"  # Only build Python 3.8-3.12 wheels
 skip = ["pp*", "*musllinux*"]  # disable PyPy and musl-based wheels
 test-requires = "pytest pyvista scipy meshio"
 test-command = "pytest {project}/tests -v"
@@ -51,8 +51,11 @@ before-all = "yum install gmp gmp-devel -y"
 environment = "USE_MAVX='true'"
 environment-pass = ["USE_MAVX"]
 
+# pip install delvewheel &&
 [tool.cibuildwheel.windows]
-before-build = "python -c \"import os; file_path = 'build/CMakeCache.txt'; os.remove(file_path) if os.path.exists(file_path) else None\""
+before-build = "pip install delvewheel && python -c \"import os; file_path = 'build/CMakeCache.txt'; os.remove(file_path) if os.path.exists(file_path) else None\""
+repair-wheel-command = "python -c \"import shutil, os; shutil.copy(os.path.join(os.getenv('GMP_LIB'), '..', 'bin', 'mpir.dll'), '.')\" && delvewheel repair -w {dest_dir} {wheel} --add-path ."
+
 
 [tool.blackdoc]
 # From https://numpydoc.readthedocs.io/en/latest/format.html

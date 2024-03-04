@@ -70,6 +70,7 @@ ZERO_CHECK.vcxproj.filters
 fTetWildWrapper.sln
 x64/
 Release/
+mpir.dll
 
 # cibuildwheel
 wheelhouse
