@@ -9,7 +9,6 @@ description = "Python wrapper of fTetWild"
 readme = { file = "README.rst", content-type = "text/x-rst" }
 authors = [{ name = "Alex Kaszynski", email = "akascap@gmail.com" }]
 dependencies = ["numpy"]
-dynamic = ["license"]
 classifiers = [
     'Development Status :: 3 - Alpha',
     'Intended Audience :: Science/Research',
