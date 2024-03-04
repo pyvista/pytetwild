@@ -9,7 +9,7 @@ description = "Python wrapper of fTetWild"
 readme = { file = "README.rst", content-type = "text/x-rst" }
 authors = [{ name = "Alex Kaszynski", email = "akascap@gmail.com" }]
 dependencies = ["numpy"]
-dynamic = ["urls", "license"]
+dynamic = ["license"]
 classifiers = [
     'Development Status :: 3 - Alpha',
     'Intended Audience :: Science/Research',
@@ -40,8 +40,7 @@ testpaths = 'tests'
 
 [tool.cibuildwheel]
 archs = ["auto64"]  # 64-bit only
-# build = "cp38-* cp39-* cp310-* cp311-* cp312-*"  # Only build Python 3.8-3.12 wheels
-build = "cp310-*"  # Only build Python 3.8-3.12 wheels
+build = "cp38-* cp39-* cp310-* cp311-* cp312-*"  # Only build Python 3.8-3.12 wheels
 skip = ["pp*", "*musllinux*"]  # disable PyPy and musl-based wheels
 test-requires = "pytest pyvista scipy meshio"
 test-command = "pytest {project}/tests -v"
