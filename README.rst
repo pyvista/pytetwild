@@ -1,8 +1,6 @@
 pytetwild
 #########
 
-**This repository is not ready and the content here is a placeholder.**
-
 |pypi| |MPL|
 
 .. |pypi| image:: https://img.shields.io/pypi/v/pytetwild.svg?logo=python&logoColor=white
@@ -19,20 +17,17 @@ Python wrapper around the efficient C++ library for tetrahedral meshing provided
 Installation
 ************
 
+We have pre-built wheels for Python 3.8 - Python 3.12 for Windows and Linux x64.
+
 The recommended way to install ``pytetwild`` is via PyPI:
 
 .. code:: sh
 
    pip install pytetwild
 
-You can also clone the repository and install it from source:
-
-.. code:: sh
-
-   git clone https://github.com/pyvista/pytetwild.git
-   cd pytetwild
-   git submodule update --init --recursive
-   pip install .
+You can also clone the repository and install it from source, but since there's
+C++ involved, the build is a bit more complicated. See ``CONTRIBUTING.md`` for
+more details.
 
 
 Usage

@@ -19,6 +19,7 @@ dist/
 
 # MISC
 .mypy_cache
+__tracked_surface.stl
 
 # Mac
 .DS_Store
@@ -41,3 +42,36 @@ venv/
 
 # VSCode
 .vscode/
+
+# skbuild
+_skbuild/
+
+# cmake
+.ninja_deps
+.ninja_log
+CMakeCache.txt
+CMakeFiles/
+CMakeInit.txt
+CPackConfig.cmake
+CPackSourceConfig.cmake
+build.ninja
+cmake_install.cmake
+lib/
+ALL_BUILD.vcxproj
+ALL_BUILD.vcxproj.filters
+INSTALL.vcxproj
+INSTALL.vcxproj.filters
+PACKAGE.vcxproj
+PACKAGE.vcxproj.filters
+PyfTetWildWrapper.dir/
+PyfTetWildWrapper.vcxproj
+PyfTetWildWrapper.vcxproj.filters
+ZERO_CHECK.vcxproj
+ZERO_CHECK.vcxproj.filters
+fTetWildWrapper.sln
+x64/
+Release/
+mpir.dll
+
+# cibuildwheel
+wheelhouse
