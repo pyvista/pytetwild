@@ -2,6 +2,10 @@
 #include <floattetwild/FloatTetDelaunay.h>
 #include <floattetwild/Mesh.hpp>
 #include <floattetwild/MeshIO.hpp>
+#include <floattetwild/MeshImprovement.h>
+#include <floattetwild/Simplification.h>
+#include <floattetwild/TriangleInsertion.h>
+#include <thread>
 
 #include <Eigen/Dense>
 #include <iostream>
@@ -28,6 +32,19 @@ extractMeshData(const floatTetWild::Mesh &mesh) {
   std::vector<std::array<float, 3>> vertices;
   std::vector<std::array<int, 4>> tetrahedra;
 
+  // Remap tet indices for removed vertices
+  std::map<int, int> old_2_new;
+  int cnt_v = 0;
+  const auto skip_vertex = [&mesh](const int i) {
+    return mesh.tet_vertices[i].is_removed;
+  };
+  for (int i = 0; i < mesh.tet_vertices.size(); i++) {
+    if (!skip_vertex(i)) {
+      old_2_new[i] = cnt_v;
+      cnt_v++;
+    }
+  }
+
   // Extract vertices
   for (const auto &vertex : mesh.tet_vertices) {
     if (!vertex.is_removed) {
@@ -41,7 +58,8 @@ extractMeshData(const floatTetWild::Mesh &mesh) {
   for (const auto &tet : mesh.tets) {
     if (!tet.is_removed) {
       tetrahedra.push_back(
-          {{tet.indices[0], tet.indices[1], tet.indices[2], tet.indices[3]}});
+          {{old_2_new[tet.indices[0]], old_2_new[tet.indices[1]],
+            old_2_new[tet.indices[2]], old_2_new[tet.indices[3]]}});
     }
   }
 
@@ -125,16 +143,61 @@ tetrahedralize(GEO::vector<double> &vertices, GEO::vector<geo_index_t> &faces) {
     input_faces[i] << sf_mesh.facets.vertex(i, 0), sf_mesh.facets.vertex(i, 1),
         sf_mesh.facets.vertex(i, 2);
 
-  std::vector<bool> is_face_inserted(input_faces.size(), false);
+  Parameters &params = mesh.params;
+  if (!params.init(tree.get_sf_diag())) {
+    throw std::runtime_error(
+        "FTetWildWrapper.cpp: Parameters initialization failed");
+  }
+  const size_t MB = 1024 * 1024;
+  const size_t stack_size = 64 * MB;
+  unsigned int max_threads = std::numeric_limits<unsigned int>::max();
+  unsigned int num_threads = std::max(1u, std::thread::hardware_concurrency());
+  num_threads = std::min(max_threads, num_threads);
+  params.num_threads = num_threads;
+
+  std::vector<int> input_tags;
+  if (input_tags.size() != input_faces.size()) {
+    input_tags.resize(input_faces.size());
+    std::fill(input_tags.begin(), input_tags.end(), 0);
+  }
+  bool skip_simplify = false;
+  simplify(input_points, input_faces, input_tags, tree, params, skip_simplify);
+  tree.init_b_mesh_and_tree(input_points, input_faces, mesh);
 
   // Perform tetrahedralization
+  std::vector<bool> is_face_inserted(input_faces.size(), false);
   std::cout << "Starting tetrahedralization..." << std::endl;
   FloatTetDelaunay::tetrahedralize(input_points, input_faces, tree, mesh,
                                    is_face_inserted);
   std::cout << "Tetrahedralization performed." << std::endl;
 
+  insert_triangles(input_points, input_faces, input_tags, mesh,
+                   is_face_inserted, tree, false);
+  optimization(input_points, input_faces, input_tags, is_face_inserted, mesh,
+               tree, {{1, 1, 1, 1}});
+  correct_tracked_surface_orientation(mesh, tree);
+
+  // filter elements
+  if (params.smooth_open_boundary) {
+    smooth_open_boundary(mesh, tree);
+    for (auto &t : mesh.tets) {
+      if (t.is_outside)
+        t.is_removed = true;
+    }
+  } else {
+    if (!params.disable_filtering) {
+      if (params.use_floodfill) {
+        filter_outside_floodfill(mesh);
+      } else if (params.use_input_for_wn) {
+        filter_outside(mesh, input_points, input_faces);
+      } else
+        filter_outside(mesh);
+    }
+  }
+
   std::cout << "Tetrahedralization completed. Extracting mesh data..."
             << std::endl;
+
   return extractMeshData(mesh);
 }
 
