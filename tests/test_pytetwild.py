@@ -7,7 +7,7 @@ import pytest
 from pytetwild import (
     tetrahedralize_pv,
     tetrahedralize,
-)  # Replace 'your_module' with the name of your Python file
+)
 
 THIS_PATH = os.path.dirname(os.path.abspath(__file__))
 

@@ -19,6 +19,7 @@ dist/
 
 # MISC
 .mypy_cache
+__tracked_surface.stl
 
 # Mac
 .DS_Store
