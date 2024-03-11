@@ -80,7 +80,8 @@ template <typename T> GEO::vector<T> array_to_geo_vector(py::array_t<T> array) {
 }
 
 std::pair<std::vector<std::array<float, 3>>, std::vector<std::array<int, 4>>>
-tetrahedralize(GEO::vector<double> &vertices, GEO::vector<geo_index_t> &faces) {
+tetrahedralize(GEO::vector<double> &vertices, GEO::vector<geo_index_t> &faces,
+               bool optimize, float scale_fac) {
   using namespace floatTetWild;
   using namespace Eigen;
 
@@ -99,26 +100,27 @@ tetrahedralize(GEO::vector<double> &vertices, GEO::vector<geo_index_t> &faces) {
   }
   sf_mesh.show_stats("I/O");
 
-  std::cout << "Vertices (Points):" << std::endl;
-  for (size_t i = 0; i < sf_mesh.vertices.nb(); ++i) {
-    const GEO::vec3 &p =
-        sf_mesh.vertices.point(i); // Access the point at index i
-    std::cout << "Vertex " << i << ": (" << p[0] << ", " << p[1] << ", " << p[2]
-              << ")" << std::endl;
-  }
+  // std::cout << "Vertices (Points):" << std::endl;
+  // for (size_t i = 0; i < sf_mesh.vertices.nb(); ++i) {
+  //   const GEO::vec3 &p =
+  //       sf_mesh.vertices.point(i); // Access the point at index i
+  //   std::cout << "Vertex " << i << ": (" << p[0] << ", " << p[1] << ", " <<
+  //   p[2]
+  //             << ")" << std::endl;
+  // }
 
   // Print all facets (faces)
-  std::cout << "\nFacets (Faces):" << std::endl;
-  for (size_t i = 0; i < sf_mesh.facets.nb(); ++i) {
-    std::cout << "Face " << i << ":";
-    for (size_t j = 0; j < sf_mesh.facets.nb_vertices(i); ++j) {
-      // Print each vertex index that makes up the facet
-      std::cout << " " << sf_mesh.facets.vertex(i, j);
-    }
-    std::cout << std::endl;
-  }
+  // std::cout << "\nFacets (Faces):" << std::endl;
+  // for (size_t i = 0; i < sf_mesh.facets.nb(); ++i) {
+  //   std::cout << "Face " << i << ":";
+  //   for (size_t j = 0; j < sf_mesh.facets.nb_vertices(i); ++j) {
+  //     // Print each vertex index that makes up the facet
+  //     std::cout << " " << sf_mesh.facets.vertex(i, j);
+  //   }
+  //   std::cout << std::endl;
+  // }
 
-  GEO::mesh_reorder(sf_mesh, GEO::MESH_ORDER_MORTON); // segfault here...
+  GEO::mesh_reorder(sf_mesh, GEO::MESH_ORDER_MORTON);
   std::cout << "Loaded mesh data into GEO::Mesh." << std::endl;
 
   // Initialize AABBWrapper with the loaded GEO::Mesh for collision checking
@@ -144,7 +146,7 @@ tetrahedralize(GEO::vector<double> &vertices, GEO::vector<geo_index_t> &faces) {
         sf_mesh.facets.vertex(i, 2);
 
   Parameters &params = mesh.params;
-  if (!params.init(tree.get_sf_diag())) {
+  if (!params.init(tree.get_sf_diag() * scale_fac)) {
     throw std::runtime_error(
         "FTetWildWrapper.cpp: Parameters initialization failed");
   }
@@ -173,8 +175,10 @@ tetrahedralize(GEO::vector<double> &vertices, GEO::vector<geo_index_t> &faces) {
 
   insert_triangles(input_points, input_faces, input_tags, mesh,
                    is_face_inserted, tree, false);
-  optimization(input_points, input_faces, input_tags, is_face_inserted, mesh,
-               tree, {{1, 1, 1, 1}});
+  if (optimize) {
+    optimization(input_points, input_faces, input_tags, is_face_inserted, mesh,
+                 tree, {{1, 1, 1, 1}});
+  }
   correct_tracked_surface_orientation(mesh, tree);
 
   // filter elements
@@ -206,10 +210,13 @@ PYBIND11_MODULE(PyfTetWildWrapper, m) {
 
   m.def(
       "tetrahedralize_mesh",
-      [](py::array_t<double> vertices, py::array_t<unsigned int> faces) {
+      [](py::array_t<double> vertices, py::array_t<unsigned int> faces,
+         bool optimize, float scale_fac) {
         // GEO::Logger* geo_logger = GEO::Logger::instance();
         // geo_logger-->initialize();
         GEO::initialize();
+
+        scale_fac *= 20; // already treated as 1/20 internally
 
         py::print("Starting tetrahedralization process...");
 
@@ -217,7 +224,8 @@ PYBIND11_MODULE(PyfTetWildWrapper, m) {
         // function
         GEO::vector<double> vertices_vec = array_to_geo_vector(vertices);
         GEO::vector<geo_index_t> faces_vec = array_to_geo_vector(faces);
-        auto result = tetrahedralize(vertices_vec, faces_vec);
+        auto result =
+            tetrahedralize(vertices_vec, faces_vec, optimize, scale_fac);
         auto vertices_result = result.first;
         auto tetrahedra_result = result.second;
         py::print("Tetrahedralization complete.");
