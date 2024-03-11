@@ -29,6 +29,9 @@ def tetrahedralize_pv(mesh: "pv.PolyData") -> "pv.UnstructuredGrid":
             "Install PyVista to use this feature with:\n\n" "pip install pytetwild[all]"
         )
 
+    if not isinstance(mesh, pv.PolyData):
+        raise TypeError(f"`mesh` must be a pyvista.PolyData, got {type(mesh)}")
+
     if not mesh.is_all_triangles:
         warnings.warn(
             "Input mesh is not all triangles. Either call `.triangulate()`"
