@@ -33,28 +33,72 @@ more details.
 Usage
 *****
 
-To tetrahedralize a surface mesh:
+To tetrahedralize a surface mesh from `PyVista <https://docs.pyvista.org>`_:
+
+.. code:: py
+
+   import pyvista as pv
+   import pytetwild
+
+   # Load or create a PyVista PolyData surface mesh
+   # Here, we'll create a simple sphere mesh as an example
+   surface_mesh = pv.Icosphere(nsub=2)
+
+   # Convert the surface mesh to a tetrahedral mesh. For this example let's
+   # use a coarse mesh
+   tetrahedral_mesh = pytetwild.tetrahedralize_pv(surface_mesh, edge_length_fac=1))
+
+   # Visualize the tetrahedral mesh in an "exploded" view
+   tetrahedral_mesh.explode(1).plot(show_edges=True)
+
+.. image:: https://github.com/pyvista/pytetwild/raw/main/exploded-sphere.png
+
+You can also work with raw arrays. Here's a simple cube that we turn into tetrahedra.
 
 .. code:: pycon
 
-   >>> import pytetwild
-   >>> mesh = pytetwild.tetrahedralize("input_mesh.ply")
-   >>> mesh.vertices
-   array([[x1, y1, z1],
-          [x2, y2, z2],
-          ...], dtype=float32)
-   >>> mesh.tetrahedra
-   array([[i1, j1, k1, l1],
-          [i2, j2, k2, l2],
-          ...], dtype=int32)
+   import numpy as np
 
-You can also load a mesh, perform tetrahedralization, and export the tetrahedral mesh:
+   # Define vertices of the cube
+   vertices = np.array([
+       [0, 0, 0],  # Vertex 0
+       [1, 0, 0],  # Vertex 1
+       [1, 1, 0],  # Vertex 2
+       [0, 1, 0],  # Vertex 3
+       [0, 0, 1],  # Vertex 4
+       [1, 0, 1],  # Vertex 5
+       [1, 1, 1],  # Vertex 6
+       [0, 1, 1]   # Vertex 7
+   ])
 
-.. code:: pycon
+   # Define faces using vertex indices
+   # Each face is a rectangle (also accepts triangles)
+   faces = np.array([
+       [0, 1, 2, 3],  # Front face
+       [1, 5, 6, 2],  # Right face
+       [5, 4, 7, 6],  # Back face
+       [4, 0, 3, 7],  # Left face
+       [4, 5, 1, 0],  # Bottom face
+       [3, 2, 6, 7]   # Top face
+   ])
+   v_out, tetra = pytetwild.tetrahedralize(vertices, faces, optimize=False)
 
-    >>> import pytetwild
-    >>> pytetwild.tetrahedralize("input_mesh.ply", "output_mesh.ply")
 
+Usage - Options
+---------------
+We've surfaced a handful of parameters to each of our interfaces
+``tetrahedralize`` and ``tetrahedralize_pv``. Here are the optional parameters.
+
+.. code::
+
+    Additional Parameters
+    ---------------------
+    edge_length_fac : float, default: 0.05
+        Tetrahedral edge length as a function of bounding box diagional. The
+        default ideal edge length is bb/20 (bounding box divided by 20).
+    optimize : bool
+        Improve the minimum scaled Jacobean for each cell. This leads to higher
+        cell quality at the expense of computation time.
 
 
 License and Acknowledgments

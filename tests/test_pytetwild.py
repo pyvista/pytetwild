@@ -25,7 +25,7 @@ def default_test_data():
 @pytest.mark.parametrize("mesh_generator", [pv.Icosphere, pv.examples.download_bunny_coarse])
 def test_tetrahedralize_pv(mesh_generator):
     mesh = mesh_generator()
-    result = tetrahedralize_pv(mesh)
+    result = tetrahedralize_pv(mesh, edge_length_fac=0.5)
     assert isinstance(
         result, pv.UnstructuredGrid
     ), "The result should be a PyVista UnstructuredGrid"
@@ -33,14 +33,33 @@ def test_tetrahedralize_pv(mesh_generator):
     assert result.n_points > 0, "The resulting mesh should have more than 0 points"
 
 
+def test_tetrahedralize_edge_length():
+    mesh = pv.Cube().triangulate()
+    result = tetrahedralize_pv(mesh)
+    result_very_coarse = tetrahedralize_pv(mesh, edge_length_fac=1.0)
+    assert result_very_coarse.n_cells < result.n_cells
+    with pytest.raises(ValueError):
+        tetrahedralize_pv(mesh, edge_length_fac=0.0)
+
+
+def test_tetrahedralize_pv_opt():
+    mesh = pv.Sphere(phi_resolution=10, theta_resolution=10)
+    grid = tetrahedralize_pv(mesh, optimize=True)
+    qual_mean = np.mean(-grid.compute_cell_quality()["CellQuality"])
+
+    grid_no_opt = tetrahedralize_pv(mesh, optimize=False)
+    qual_mean_no_opt = np.mean(-grid_no_opt.compute_cell_quality()["CellQuality"])
+    assert qual_mean > qual_mean_no_opt
+
+
 # Parameterized test for tetrahedralize function
 @pytest.mark.parametrize("mesh_generator", [pv.Icosphere, pv.examples.download_bunny_coarse])
 def test_tetrahedralize(mesh_generator):
     mesh = mesh_generator()
-    vertices = np.array(mesh.points, dtype=np.float64)
-    faces = np.array(mesh.faces.reshape((-1, 4))[:, 1:4], dtype=np.int32)
+    vertices = mesh.points
+    faces = mesh.faces.reshape((-1, 4))[:, 1:4]
 
-    vertices_result, tetrahedra_result = tetrahedralize(vertices, faces)
+    vertices_result, tetrahedra_result = tetrahedralize(vertices, faces, edge_length_fac=0.5)
     assert isinstance(vertices_result, np.ndarray), "The vertices result should be a numpy array"
     assert isinstance(
         tetrahedra_result, np.ndarray
@@ -70,7 +89,7 @@ def _symmetric_surf_dist(pts0, pts1):
 )  # pv.examples.download_bunny_coarse is not closed, so select_enclosed_points fails
 def test_output_points_enclosed(mesh_generator):
     input_pv = mesh_generator()
-    py_output_pv = tetrahedralize_pv(input_pv)
+    py_output_pv = tetrahedralize_pv(input_pv, edge_length_fac=0.1)
     additional_input_scaling = 0.01
     enclosed_pv = py_output_pv.select_enclosed_points(input_pv.scale(1 + additional_input_scaling))
     enclosed_ratio = enclosed_pv.point_data["SelectedPoints"].sum() / input_pv.points.shape[0]
