@@ -99,26 +99,27 @@ tetrahedralize(GEO::vector<double> &vertices, GEO::vector<geo_index_t> &faces) {
   }
   sf_mesh.show_stats("I/O");
 
-  std::cout << "Vertices (Points):" << std::endl;
-  for (size_t i = 0; i < sf_mesh.vertices.nb(); ++i) {
-    const GEO::vec3 &p =
-        sf_mesh.vertices.point(i); // Access the point at index i
-    std::cout << "Vertex " << i << ": (" << p[0] << ", " << p[1] << ", " << p[2]
-              << ")" << std::endl;
-  }
+  // std::cout << "Vertices (Points):" << std::endl;
+  // for (size_t i = 0; i < sf_mesh.vertices.nb(); ++i) {
+  //   const GEO::vec3 &p =
+  //       sf_mesh.vertices.point(i); // Access the point at index i
+  //   std::cout << "Vertex " << i << ": (" << p[0] << ", " << p[1] << ", " <<
+  //   p[2]
+  //             << ")" << std::endl;
+  // }
 
   // Print all facets (faces)
-  std::cout << "\nFacets (Faces):" << std::endl;
-  for (size_t i = 0; i < sf_mesh.facets.nb(); ++i) {
-    std::cout << "Face " << i << ":";
-    for (size_t j = 0; j < sf_mesh.facets.nb_vertices(i); ++j) {
-      // Print each vertex index that makes up the facet
-      std::cout << " " << sf_mesh.facets.vertex(i, j);
-    }
-    std::cout << std::endl;
-  }
+  // std::cout << "\nFacets (Faces):" << std::endl;
+  // for (size_t i = 0; i < sf_mesh.facets.nb(); ++i) {
+  //   std::cout << "Face " << i << ":";
+  //   for (size_t j = 0; j < sf_mesh.facets.nb_vertices(i); ++j) {
+  //     // Print each vertex index that makes up the facet
+  //     std::cout << " " << sf_mesh.facets.vertex(i, j);
+  //   }
+  //   std::cout << std::endl;
+  // }
 
-  GEO::mesh_reorder(sf_mesh, GEO::MESH_ORDER_MORTON); // segfault here...
+  GEO::mesh_reorder(sf_mesh, GEO::MESH_ORDER_MORTON);
   std::cout << "Loaded mesh data into GEO::Mesh." << std::endl;
 
   // Initialize AABBWrapper with the loaded GEO::Mesh for collision checking
