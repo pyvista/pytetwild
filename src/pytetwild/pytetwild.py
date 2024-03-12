@@ -1,8 +1,9 @@
 """Wrapper for fTetWild."""
 import warnings
 import numpy as np
-from pytetwild import PyfTetWildWrapper
+from pytetwild import PyfTetWildWrapper  # type: ignore
 from typing import Tuple, TYPE_CHECKING
+import numpy.typing as npt
 
 if TYPE_CHECKING:
     import pyvista as pv
@@ -99,8 +100,11 @@ def tetrahedralize_pv(
 
 
 def tetrahedralize(
-    vertices: np.ndarray, faces: np.ndarray, optimize: bool = True, edge_length_fac: float = 0.05
-) -> Tuple[np.ndarray, np.ndarray]:
+    vertices: npt.NDArray[np.float64],
+    faces: npt.NDArray[np.int32],
+    optimize: bool = True,
+    edge_length_fac: float = 0.05,
+) -> Tuple[npt.NDArray[np.float64], npt.NDArray[np.int32]]:
     """
     Convert mesh vertices and faces to a tetrahedral mesh.
 
