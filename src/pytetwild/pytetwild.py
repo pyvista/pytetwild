@@ -1,4 +1,5 @@
 """Wrapper for fTetWild."""
+
 import warnings
 import numpy as np
 from pytetwild import PyfTetWildWrapper  # type: ignore
