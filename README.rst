@@ -46,7 +46,7 @@ To tetrahedralize a surface mesh from `PyVista <https://docs.pyvista.org>`_:
 
    # Convert the surface mesh to a tetrahedral mesh. For this example let's
    # use a coarse mesh
-   tetrahedral_mesh = pytetwild.tetrahedralize_pv(surface_mesh, edge_length_fac=1))
+   tetrahedral_mesh = pytetwild.tetrahedralize_pv(surface_mesh, edge_length_fac=1)
 
    # Visualize the tetrahedral mesh in an "exploded" view
    tetrahedral_mesh.explode(1).plot(show_edges=True)
