@@ -1,6 +1,6 @@
 repos:
 - repo: https://github.com/astral-sh/ruff-pre-commit
-  rev: v0.4.3
+  rev: v0.6.9
   hooks:
     - id: ruff
       args: [--fix, --exit-non-zero-on-fix]
@@ -14,13 +14,13 @@ repos:
     exclude: README.rst
 
 - repo: https://github.com/numpy/numpydoc
-  rev: v1.7.0
+  rev: v1.8.0
   hooks:
   - id: numpydoc-validation
     files: ^src/pytetwild
 
 - repo: https://github.com/codespell-project/codespell
-  rev: v2.2.6
+  rev: v2.3.0
   hooks:
   - id: codespell
     args: ["--skip=*.vt*"]
@@ -33,14 +33,14 @@ repos:
     files: ^src/pytetwild/.*\.py
 
 - repo: https://github.com/pre-commit/pre-commit-hooks
-  rev: v4.6.0
+  rev: v5.0.0
   hooks:
   - id: check-merge-conflict
   - id: debug-statements
   - id: trailing-whitespace
 
 - repo: https://github.com/pre-commit/mirrors-clang-format
-  rev: v18.1.4
+  rev: v19.1.1
   hooks:
   - id: clang-format
     files: |
@@ -49,7 +49,7 @@ repos:
       )$
 
 - repo: https://github.com/pre-commit/mirrors-mypy
-  rev: v1.10.0
+  rev: v1.11.2
   hooks:
   - id: mypy
     exclude: ^(docs/|tests)
@@ -61,6 +61,6 @@ repos:
   ]
 
 - repo: https://github.com/python-jsonschema/check-jsonschema
-  rev: 0.28.2
+  rev: 0.29.4
   hooks:
     - id: check-github-workflows
