@@ -17,7 +17,7 @@ Python wrapper around the efficient C++ library for tetrahedral meshing provided
 Installation
 ************
 
-We have pre-built wheels for Python 3.8 - Python 3.12 for Windows and Linux x64.
+We have pre-built wheels for Python 3.9 - Python 3.13 for Windows and Linux x64.
 
 The recommended way to install ``pytetwild`` is via PyPI:
 
