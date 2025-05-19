@@ -16,7 +16,7 @@ def _check_edge_length(edge_length_fac: float) -> None:
     Parameters
     ----------
     edge_length_fac : float, default: 0.05
-        Tetrahedral edge length as a function of bounding box diagional. The
+        Tetrahedral edge length as a function of bounding box diagonal. The
         default ideal edge length is bb/20 (bounding box divided by 20).
 
 
@@ -36,7 +36,7 @@ def tetrahedralize_pv(
     mesh : pv.PolyData
         The input surface mesh.
     edge_length_fac : float, default: 0.05
-        Tetrahedral edge length as a function of bounding box diagional. The
+        Tetrahedral edge length as a function of bounding box diagonal. The
         default ideal edge length is bb/20 (bounding box divided by 20).
     optimize : bool
         Improve the minimum scaled Jacobean for each cell. This leads to higher
@@ -119,7 +119,7 @@ def tetrahedralize(
         Improve the minimum scaled Jacobean for each cell. This leads to higher
         cell quality at the expense of computation time.
     edge_length_fac : float, default: 0.05
-        Tetrahedral edge length as a function of bounding box diagional. The
+        Tetrahedral edge length as a function of bounding box diagonal. The
         default ideal edge length is bb/20 (bounding box divided by 20).
 
     Returns
