@@ -94,7 +94,7 @@ We've surfaced a handful of parameters to each of our interfaces
     Additional Parameters
     ---------------------
     edge_length_fac : float, default: 0.05
-        Tetrahedral edge length as a function of bounding box diagional. The
+        Tetrahedral edge length as a function of bounding box diagonal. The
         default ideal edge length is bb/20 (bounding box divided by 20).
     optimize : bool
         Improve the minimum scaled Jacobean for each cell. This leads to higher
