@@ -150,7 +150,7 @@ def tetrahedralize_csg(
     Parameters
     ----------
     csg_file : str
-        Path to the input json file
+        Path to the input json file.
     epsilon : float, default 1e-3
         Envelop size, specifying the maximum distance of the output surface from the input surface,
         relative to the bounding box size.
