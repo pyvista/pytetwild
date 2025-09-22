@@ -23,7 +23,13 @@ classifiers = [
     'Programming Language :: Python :: 3.11',
     'Programming Language :: Python :: 3.12',
 ]
-include = ["src/pytetwild/py.typed"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["pytetwild*"]
+
+[tool.setuptools.package-data]
+pytetwild = ["py.typed"]
 
 [project.optional-dependencies]
 all = ['pyvista']
@@ -147,4 +153,3 @@ extend-select = [
     "RUF010",
     "RUF100",
 ]
-
