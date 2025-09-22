@@ -67,7 +67,7 @@ def tetrahedralize_pv(
         import pyvista as pv
     except:
         raise ModuleNotFoundError(
-            "Install PyVista to use this feature with:\n\n" "pip install pytetwild[all]"
+            "Install PyVista to use this feature with:\n\npip install pytetwild[all]"
         )
 
     if not isinstance(mesh, pv.PolyData):
@@ -139,13 +139,13 @@ def tetrahedralize(
 
 def tetrahedralize_csg(
     csg_file: str,
-    epsilon: float=1e-3,
+    epsilon: float = 1e-3,
     edge_length_r: float = 0.05,
     stop_energy: float = 10.0,
     coarsen: bool = True,
 ) -> "pv.UnstructuredGrid":
     """
-    Generates a tetrahedral mesh based on a the CSG tree specified in the csf_file, 
+    Generates a tetrahedral mesh based on a the CSG tree specified in the csf_file,
     and returns a pyvista UnstructuredGrid with a cell attribute 'marker' indicating
     which of the surfaces the cell belongs to.
 
