@@ -4,11 +4,7 @@ import pyvista as pv
 import vtk
 from scipy.spatial import KDTree
 import pytest
-from pytetwild import (
-    tetrahedralize_pv,
-    tetrahedralize,
-    tetrahedralize_csg
-)
+from pytetwild import tetrahedralize_pv, tetrahedralize, tetrahedralize_csg
 
 THIS_PATH = os.path.dirname(os.path.abspath(__file__))
 
