@@ -316,6 +316,8 @@ PYBIND11_MODULE(PyfTetWildWrapper, m) {
             np_tets_access(i, j) = tetrahedra_result[i][j];
           }
         }
+        py::print("Prepared numpy array for tetrahedra.");
+
         py::print("Tetrahedralization process completed successfully.");
         return std::make_pair(np_vertices, np_tetrahedra);
       },
