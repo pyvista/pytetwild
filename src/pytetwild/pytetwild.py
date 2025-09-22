@@ -137,17 +137,18 @@ def tetrahedralize(
     return PyfTetWildWrapper.tetrahedralize_mesh(vertices, faces, optimize, edge_length_fac)
 
 
-
 def tetrahedralize_csg(
     csg_file: str,
     epsilon: float,
     edge_length_r: float = 0.05,
-    stop_energy:float=10.0,
-    coarsen:bool=True) -> "pv.UnstructuredGrid":
+    stop_energy: float = 10.0,
+    coarsen: bool = True,
+) -> "pv.UnstructuredGrid":
     import pyvista as pv
-    (tetrahedral_mesh_vertices,
-    tetrahedral_mesh_tetrahedra,
-    tetrahedral_marker) = PyfTetWildWrapper.tetrahedralize_csg(csg_file, epsilon, edge_length_r, stop_energy, coarsen)
+
+    (tetrahedral_mesh_vertices, tetrahedral_mesh_tetrahedra, tetrahedral_marker) = (
+        PyfTetWildWrapper.tetrahedralize_csg(csg_file, epsilon, edge_length_r, stop_energy, coarsen)
+    )
     cells = np.hstack(
         [
             np.full((tetrahedral_mesh_tetrahedra.shape[0], 1), 4, dtype=np.int32),
@@ -159,4 +160,3 @@ def tetrahedralize_csg(
     grid = pv.UnstructuredGrid(cells, cell_types, tetrahedral_mesh_vertices)
     grid["marker"] = tetrahedral_marker
     return grid
-
