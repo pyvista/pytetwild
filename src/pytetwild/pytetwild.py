@@ -67,7 +67,7 @@ def tetrahedralize_pv(
         import pyvista as pv
     except:
         raise ModuleNotFoundError(
-            "Install PyVista to use this feature with:\n\n" "pip install pytetwild[all]"
+            "Install PyVista to use this feature with:\n\npip install pytetwild[all]"
         )
 
     if not isinstance(mesh, pv.PolyData):
