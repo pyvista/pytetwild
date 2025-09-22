@@ -145,14 +145,11 @@ def tetrahedralize_csg(
     coarsen: bool = True,
 ) -> "pv.UnstructuredGrid":
     """
-    Generates a tetrahedral mesh based on a the CSG tree specified in the csf_file,
-    and returns a pyvista UnstructuredGrid with a cell attribute 'marker' indicating
-    which of the surfaces the cell belongs to.
-
+    Generates a tetrahedral mesh based on a the CSG tree specified in the csf_file.
     Parameters
     ----------
-    mesh : pv.PolyData
-        The input surface mesh.
+    csg_file : str
+        Path to the input json file
     epsilon : float, default 1e-3
         Envelop size, specifying the maximum distance of the output surface from the input surface,
         relative to the bounding box size.
@@ -167,7 +164,8 @@ def tetrahedralize_csg(
     Returns
     -------
     pv.UnstructuredGrid
-        The converted unstructured grid containing only tetrahedra.
+        The converted unstructured grid containing only tetrahedra,
+        with a cell attribute 'marker' indicating which of the input surfaces the cell belongs to.
     """
     import pyvista as pv
 
