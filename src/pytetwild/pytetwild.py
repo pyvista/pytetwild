@@ -145,7 +145,8 @@ def tetrahedralize_csg(
     coarsen: bool = True,
 ) -> "pv.UnstructuredGrid":
     """
-    Generates a tetrahedral mesh based on a the CSG tree specified in the csf_file.
+    Generate a tetrahedral mesh based on a the CSG tree specified in the csf_file.
+
     Parameters
     ----------
     csg_file : str
@@ -167,8 +168,12 @@ def tetrahedralize_csg(
         The converted unstructured grid containing only tetrahedra,
         with a cell attribute 'marker' indicating which of the input surfaces the cell belongs to.
     """
-    import pyvista as pv
-
+    try:
+        import pyvista as pv
+    except:
+        raise ModuleNotFoundError(
+            "Install PyVista to use this feature with:\n\npip install pytetwild[all]"
+        )
     (tetrahedral_mesh_vertices, tetrahedral_mesh_tetrahedra, tetrahedral_marker) = (
         PyfTetWildWrapper.tetrahedralize_csg(csg_file, epsilon, edge_length_r, stop_energy, coarsen)
     )
