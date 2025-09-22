@@ -1,0 +1,1 @@
+{"operation":"union", "right":"tests/test_data/sphere.stl", "left":"tests/test_data/box.stl"}

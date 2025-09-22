@@ -7,6 +7,7 @@ import pytest
 from pytetwild import (
     tetrahedralize_pv,
     tetrahedralize,
+    pytetwild
 )
 
 THIS_PATH = os.path.dirname(os.path.abspath(__file__))
@@ -106,3 +107,25 @@ def test_default_output_surf_dist(default_test_data):
     pts1 = _sample_points_vtk(output_pv.extract_surface())
     surf_dist = _symmetric_surf_dist(pts0, pts1)
     assert surf_dist < 1e-2, "surfs of outputs from c++/py should be similar"
+
+def test_csg():
+    # compute an the union of a box and a sphere, which overlap on one corner
+    mesh = tetrahedralize_csg("tests/test_data//csgtree.json", 0.0005, 0.1)
+    mesh = mesh.compute_cell_sizes()
+
+    sphere =  mesh.extract_cells(mesh["marker"]==2)
+    box =  mesh.extract_cells(mesh["marker"]==1)
+    spherevol = abs(sphere["Volume"]).sum()
+    boxvol = abs(box["Volume"]).sum()
+
+    # the sphere is fully contained, and has R=1
+    exactspherevol = 4 / 3 * np.pi
+    # the box is missing 1/8 of the sphere
+    exactboxvol = 2**3 - exactspherevol / 8
+
+    assert np.isclose(exactspherevol, spherevol, rtol=0.02)
+    assert np.isclose(exactboxvol, boxvol, rtol=0.02)
+
+
+    
+
