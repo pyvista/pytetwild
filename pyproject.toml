@@ -36,9 +36,15 @@ all = ['pyvista']
 dev = ["pytest", "pre-commit", "pyvista", "scipy", "meshio"]
 
 [tool.scikit-build]
-cmake.build-type = "Release"
 build-dir = "./build"
 editable.mode = "inplace"
+
+[tool.scikit-build.cmake]
+args = [
+    "-DCMAKE_BUILD_TYPE=Release",
+    "-DCMAKE_CXX_STANDARD=17",
+    "-DBUILD_SHARED_LIBS=OFF",
+]
 
 [tool.pytest.ini_options]
 testpaths = 'tests'
