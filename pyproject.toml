@@ -58,7 +58,7 @@ test-command = "pytest {project}/tests -v"
 
 [tool.cibuildwheel.linux]
 manylinux-x86_64-image = "manylinux_2_28"
-before-all = "dnf install -y gmp gmp-devel libxi-dev libxcursor-dev libxinerama-dev libxrandr-dev"
+before-all = "dnf install -y gmp-devel libXi-devel libXcursor-devel libXinerama-devel libXrandr-devel"
 environment = "USE_MAVX='true'"
 environment-pass = ["USE_MAVX"]
 
