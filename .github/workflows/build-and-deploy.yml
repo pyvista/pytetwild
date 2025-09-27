@@ -33,7 +33,7 @@ jobs:
       - name: Install Dependencies (Windows)
         if: runner.os == 'Windows'
         shell: powershell
-        run: conda install -c conda-forge mpir -y
+        run: conda install -c conda-forge mpir zlib -y
 
       - name: Set env (Windows)
         if: runner.os == 'Windows'
