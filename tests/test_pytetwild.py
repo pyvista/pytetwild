@@ -106,8 +106,18 @@ def test_default_output_surf_dist(default_test_data):
 
 
 def test_csg():
+
+    csgtree = {"operation":"union",
+               "right":os.path.join(THIS_PATH, "test_data/sphere.stl"),
+               "left":os.path.join(THIS_PATH, "test_data/box.stl"),
+                }
+    import json
+    csgjson_path = os.path.join(THIS_PATH, "test_data/csgtree.json")
+    with open(csgjson_path, 'w') as f:
+        json.dump(csgtree, f)
+
     # compute an the union of a box and a sphere, which overlap on one corner
-    mesh = tetrahedralize_csg(os.path.join(THIS_PATH, "test_data/csgtree.json"), 0.0005, 0.1)
+    mesh = tetrahedralize_csg(csgjson_path, 0.0005, 0.1)
     mesh = mesh.compute_cell_sizes()
 
     sphere = mesh.extract_cells(mesh["marker"] == 2)
