@@ -51,7 +51,7 @@ testpaths = 'tests'
 
 [tool.cibuildwheel]
 archs = ["auto64"]  # 64-bit only
-build = "cp38-* cp39-* cp310-* cp311-* cp312-*"  # Only build Python 3.8-3.12 wheels
+build = "cp310-* cp311-* cp312-*"  # Only build Python 3.10-3.12 wheels
 skip = ["pp*", "*musllinux*"]  # disable PyPy and musl-based wheels
 test-requires = "pytest pyvista scipy meshio"
 test-command = "pytest {project}/tests -v"
