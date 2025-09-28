@@ -43,7 +43,7 @@ jobs:
           echo "GMP_LIB=C:\Miniconda\envs\test\Library\lib" >> ${env:GITHUB_ENV}
 
       - name: Build wheels
-        uses: pypa/cibuildwheel@v2.16.5
+        uses: pypa/cibuildwheel@v3.2.0
 
       - name: List generated wheels
         run: ls ./wheelhouse/*
