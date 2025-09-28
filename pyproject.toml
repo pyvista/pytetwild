@@ -59,12 +59,16 @@ test-command = "pytest {project}/tests -v"
 [tool.cibuildwheel.linux]
 manylinux-x86_64-image = "manylinux_2_28"
 before-all = "dnf install -y gmp-devel libXi-devel libXcursor-devel libXinerama-devel libXrandr-devel"
+before-build = "pip install cmake==3.29.0"
 environment = "USE_MAVX='true'"
 environment-pass = ["USE_MAVX"]
 
+[tool.cibuildwheel.macos]
+before-build = "pip install cmake==3.29.0"
+
 # pip install delvewheel &&
 [tool.cibuildwheel.windows]
-before-build = "pip install delvewheel && python -c \"import os; file_path = 'build/CMakeCache.txt'; os.remove(file_path) if os.path.exists(file_path) else None\""
+before-build = "pip install cmake==3.29.0 delvewheel && python -c \"import os; file_path = 'build/CMakeCache.txt'; os.remove(file_path) if os.path.exists(file_path) else None\""
 repair-wheel-command = "python -c \"import shutil, os; shutil.copy(os.path.join(os.getenv('GMP_LIB'), '..', 'bin', 'mpir.dll'), '.')\" && delvewheel repair -w {dest_dir} {wheel} --add-path ."
 
 
