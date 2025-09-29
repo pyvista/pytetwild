@@ -23,9 +23,9 @@ def default_test_data():
 def test_tetrahedralize_pv(mesh_generator):
     mesh = mesh_generator()
     result = tetrahedralize_pv(mesh, edge_length_fac=0.5)
-    assert isinstance(
-        result, pv.UnstructuredGrid
-    ), "The result should be a PyVista UnstructuredGrid"
+    assert isinstance(result, pv.UnstructuredGrid), (
+        "The result should be a PyVista UnstructuredGrid"
+    )
     assert result.n_cells > 0, "The resulting mesh should have more than 0 cells"
     assert result.n_points > 0, "The resulting mesh should have more than 0 points"
 
@@ -58,9 +58,9 @@ def test_tetrahedralize(mesh_generator):
 
     vertices_result, tetrahedra_result = tetrahedralize(vertices, faces, edge_length_fac=0.5)
     assert isinstance(vertices_result, np.ndarray), "The vertices result should be a numpy array"
-    assert isinstance(
-        tetrahedra_result, np.ndarray
-    ), "The tetrahedra result should be a numpy array"
+    assert isinstance(tetrahedra_result, np.ndarray), (
+        "The tetrahedra result should be a numpy array"
+    )
     assert len(vertices_result) > 0, "There should be more than 0 vertices in the result"
     assert len(tetrahedra_result) > 0, "There should be more than 0 tetrahedra in the result"
 
@@ -90,9 +90,9 @@ def test_output_points_enclosed(mesh_generator):
     additional_input_scaling = 0.01
     enclosed_pv = py_output_pv.select_enclosed_points(input_pv.scale(1 + additional_input_scaling))
     enclosed_ratio = enclosed_pv.point_data["SelectedPoints"].sum() / input_pv.points.shape[0]
-    assert (
-        enclosed_ratio > 0.99
-    ), "all output vertices should be within some threshold of the input surf"
+    assert enclosed_ratio > 0.99, (
+        "all output vertices should be within some threshold of the input surf"
+    )
 
 
 def test_default_output_surf_dist(default_test_data):

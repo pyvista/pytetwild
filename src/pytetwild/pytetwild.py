@@ -155,7 +155,7 @@ def tetrahedralize_csg(
         Envelop size, specifying the maximum distance of the output surface from the input surface,
         relative to the bounding box size.
     edge_length_r : float, default: 0.05
-        Tetrahedral edge length as a function of bounding box diagional. The
+        Tetrahedral edge length as a function of bounding box diagonal. The
         default ideal edge length is bb/20 (bounding box divided by 20).
     stop_energy : float, default: 10.0
         The mesh optimization stops when the  conformal AMIPS energy reaches 'stop_energy'.
