@@ -1,10 +1,12 @@
 #include <floattetwild/AABBWrapper.h>
+#include <floattetwild/CSGTreeParser.hpp>
 #include <floattetwild/FloatTetDelaunay.h>
 #include <floattetwild/Mesh.hpp>
 #include <floattetwild/MeshIO.hpp>
 #include <floattetwild/MeshImprovement.h>
 #include <floattetwild/Simplification.h>
 #include <floattetwild/TriangleInsertion.h>
+#include <floattetwild/Types.hpp>
 #include <thread>
 
 #include <Eigen/Dense>
@@ -26,6 +28,14 @@ namespace py = pybind11;
 #include <geogram/mesh/mesh_reorder.h>
 #include <geogram/mesh/mesh_repair.h>
 #include <geogram/numerics/predicates.h>
+
+using floatTetWild::AABBWrapper;
+using floatTetWild::boolean_operation;
+using floatTetWild::CSGTreeParser;
+using floatTetWild::FloatTetDelaunay;
+using floatTetWild::json;
+using floatTetWild::Vector3;
+using floatTetWild::Vector3i;
 
 std::pair<std::vector<std::array<float, 3>>, std::vector<std::array<int, 4>>>
 extractMeshData(const floatTetWild::Mesh &mesh) {
@@ -64,6 +74,53 @@ extractMeshData(const floatTetWild::Mesh &mesh) {
   }
 
   return {vertices, tetrahedra};
+}
+
+std::tuple<std::vector<std::array<float, 3>>, std::vector<std::array<int, 4>>,
+           std::vector<int>>
+extractMeshDataMarker(const floatTetWild::Mesh &mesh) {
+  std::vector<std::array<float, 3>> vertices;
+  std::vector<std::array<int, 4>> tetrahedra;
+  std::vector<int> marker;
+
+  // Remap tet indices for removed vertices
+  std::map<int, int> old_2_new;
+  int cnt_v = 0;
+  const auto skip_vertex = [&mesh](const int i) {
+    return mesh.tet_vertices[i].is_removed;
+  };
+  for (int i = 0; i < mesh.tet_vertices.size(); i++) {
+    if (!skip_vertex(i)) {
+      old_2_new[i] = cnt_v;
+      cnt_v++;
+    }
+  }
+
+  // Extract vertices
+  for (const auto &vertex : mesh.tet_vertices) {
+    if (!vertex.is_removed) {
+      vertices.push_back({{static_cast<float>(vertex.pos.x()),
+                           static_cast<float>(vertex.pos.y()),
+                           static_cast<float>(vertex.pos.z())}});
+    }
+  }
+
+  // Extract tetrahedra
+  for (const auto &tet : mesh.tets) {
+    if (!tet.is_removed) {
+      tetrahedra.push_back(
+          {{old_2_new[tet.indices[0]], old_2_new[tet.indices[1]],
+            old_2_new[tet.indices[2]], old_2_new[tet.indices[3]]}});
+    }
+  }
+  // Extract marker
+  for (const auto &tet : mesh.tets) {
+    if (!tet.is_removed) {
+      marker.push_back(old_2_new[tet.scalar]);
+    }
+  }
+
+  return {vertices, tetrahedra, marker};
 }
 
 template <typename T> GEO::vector<T> array_to_geo_vector(py::array_t<T> array) {
@@ -263,4 +320,121 @@ PYBIND11_MODULE(PyfTetWildWrapper, m) {
       },
       "Tetrahedralizes a mesh given vertices and faces arrays, returning numpy "
       "arrays of tetrahedra and points.");
+
+  m.def(
+      "tetrahedralize_csg",
+      [](const std::string &csg_file, float epsilon, float edge_length_r,
+         float stop_energy, bool coarsen) {
+        GEO::initialize();
+
+        // Initialize mesh and parameters
+        floatTetWild::Mesh mesh;
+        floatTetWild::Parameters &params = mesh.params;
+        params.eps_rel = epsilon;
+        params.ideal_edge_length_rel = edge_length_r;
+        params.stop_energy = stop_energy;
+        params.coarsen = coarsen;
+
+        // Load CSG tree
+        json csg_tree = json({});
+        std::ifstream file(csg_file);
+        if (file.is_open()) {
+          file >> csg_tree;
+          file.close();
+        } else {
+          throw std::runtime_error("Unable to open CSG file: " + csg_file);
+        }
+
+        // Load and merge meshes from CSG tree
+        json tree_with_ids;
+        std::vector<std::string> meshes;
+        CSGTreeParser::get_meshes(csg_tree, meshes, tree_with_ids);
+
+        std::vector<Vector3> input_vertices;
+        std::vector<Vector3i> input_faces;
+        std::vector<int> input_tags;
+        GEO::Mesh sf_mesh;
+        if (!CSGTreeParser::load_and_merge(meshes, input_vertices, input_faces,
+                                           sf_mesh, input_tags))
+          throw std::runtime_error(
+              "Failed to load and merge meshes from CSG tree");
+
+        // Initialize AABBWrapper
+        AABBWrapper tree(sf_mesh);
+        if (!params.init(tree.get_sf_diag())) {
+          throw std::runtime_error("Parameters initialization failed");
+        }
+
+        // Set up threading
+        unsigned int max_threads = std::numeric_limits<unsigned int>::max();
+        unsigned int num_threads =
+            std::max(1u, std::thread::hardware_concurrency());
+        num_threads = std::min(max_threads, num_threads);
+        params.num_threads = num_threads;
+
+        // Preprocessing
+        bool skip_simplify = false;
+        simplify(input_vertices, input_faces, input_tags, tree, params,
+                 skip_simplify);
+        tree.init_b_mesh_and_tree(input_vertices, input_faces, mesh);
+
+        // Tetrahedralization
+        std::vector<bool> is_face_inserted(input_faces.size(), false);
+        FloatTetDelaunay::tetrahedralize(input_vertices, input_faces, tree,
+                                         mesh, is_face_inserted);
+
+        // Insert triangles and optimize
+        insert_triangles(input_vertices, input_faces, input_tags, mesh,
+                         is_face_inserted, tree, false);
+        optimization(input_vertices, input_faces, input_tags, is_face_inserted,
+                     mesh, tree, {{1, 1, 1, 1}});
+
+        // Correct surface orientation
+        correct_tracked_surface_orientation(mesh, tree);
+
+        // Apply Boolean operations
+        boolean_operation(mesh, tree_with_ids, meshes);
+
+        // Extract surface data
+        auto result = extractMeshDataMarker(mesh);
+        auto vertices = std::get<0>(result);
+        auto cells = std::get<1>(result);
+        auto marker = std::get<2>(result);
+
+        // Convert to numpy arrays
+        size_t num_vertices = vertices.size();
+        size_t num_cells = cells.size();
+
+        size_t v_shape[2] = {num_vertices, 3};
+        auto np_vertices = py::array_t<float>(v_shape);
+        auto v_access = np_vertices.mutable_unchecked<2>();
+        for (size_t i = 0; i < num_vertices; ++i) {
+          for (size_t j = 0; j < 3; ++j) {
+            v_access(i, j) = vertices[i][j];
+          }
+        }
+
+        size_t c_shape[2] = {num_cells, 4};
+        auto np_cells = py::array_t<int>(c_shape);
+        auto c_access = np_cells.mutable_unchecked<2>();
+        for (size_t i = 0; i < num_cells; ++i) {
+          for (size_t j = 0; j < 4; ++j) {
+            c_access(i, j) = cells[i][j];
+          }
+        }
+
+        size_t m_shape[1] = {num_cells};
+        auto np_markers = py::array_t<int>(m_shape);
+        auto m_access = np_markers.mutable_unchecked<1>();
+        for (size_t i = 0; i < num_cells; ++i) {
+          m_access(i) = marker[i];
+        }
+        py::print(
+            "Tetrahedralization process from CSG completed successfully.");
+        return std::make_tuple(np_vertices, np_cells, np_markers);
+      },
+      "Tetrahedralizes a CSG tree from a JSON file, returning numpy arrays of "
+      "vertices, cells, and markers.",
+      py::arg("csg_file"), py::arg("epsilon"), py::arg("edge_length_r"),
+      py::arg("stop_energy"), py::arg("coarsen"));
 }

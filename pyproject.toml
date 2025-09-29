@@ -23,35 +23,52 @@ classifiers = [
     'Programming Language :: Python :: 3.11',
     'Programming Language :: Python :: 3.12',
 ]
-include = ["src/pytetwild/py.typed"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["pytetwild*"]
+
+[tool.setuptools.package-data]
+pytetwild = ["py.typed"]
 
 [project.optional-dependencies]
 all = ['pyvista']
 dev = ["pytest", "pre-commit", "pyvista", "scipy", "meshio"]
 
 [tool.scikit-build]
-cmake.build-type = "Release"
 build-dir = "./build"
 editable.mode = "inplace"
+
+[tool.scikit-build.cmake]
+args = [
+    "-DCMAKE_BUILD_TYPE=Release",
+    "-DCMAKE_CXX_STANDARD=17",
+    "-DBUILD_SHARED_LIBS=OFF",
+]
 
 [tool.pytest.ini_options]
 testpaths = 'tests'
 
 [tool.cibuildwheel]
 archs = ["auto64"]  # 64-bit only
-build = "cp38-* cp39-* cp310-* cp311-* cp312-*"  # Only build Python 3.8-3.12 wheels
+build = "cp310-* cp311-* cp312-*"  # Only build Python 3.10-3.12 wheels
 skip = ["pp*", "*musllinux*"]  # disable PyPy and musl-based wheels
 test-requires = "pytest pyvista scipy meshio"
 test-command = "pytest {project}/tests -v"
 
 [tool.cibuildwheel.linux]
-before-all = "yum install gmp gmp-devel -y"
+manylinux-x86_64-image = "manylinux_2_28"
+before-all = "dnf install -y gmp-devel libXi-devel libXcursor-devel libXinerama-devel libXrandr-devel"
+before-build = "pip install cmake==3.29.0"
 environment = "USE_MAVX='true'"
 environment-pass = ["USE_MAVX"]
 
+[tool.cibuildwheel.macos]
+before-build = "pip install cmake==3.29.0"
+
 # pip install delvewheel &&
 [tool.cibuildwheel.windows]
-before-build = "pip install delvewheel && python -c \"import os; file_path = 'build/CMakeCache.txt'; os.remove(file_path) if os.path.exists(file_path) else None\""
+before-build = "pip install cmake==3.29.0 delvewheel && python -c \"import os; file_path = 'build/CMakeCache.txt'; os.remove(file_path) if os.path.exists(file_path) else None\""
 repair-wheel-command = "python -c \"import shutil, os; shutil.copy(os.path.join(os.getenv('GMP_LIB'), '..', 'bin', 'mpir.dll'), '.')\" && delvewheel repair -w {dest_dir} {wheel} --add-path ."
 
 
@@ -147,4 +164,3 @@ extend-select = [
     "RUF010",
     "RUF100",
 ]
-

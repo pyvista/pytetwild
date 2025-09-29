@@ -67,7 +67,7 @@ def tetrahedralize_pv(
         import pyvista as pv
     except:
         raise ModuleNotFoundError(
-            "Install PyVista to use this feature with:\n\n" "pip install pytetwild[all]"
+            "Install PyVista to use this feature with:\n\npip install pytetwild[all]"
         )
 
     if not isinstance(mesh, pv.PolyData):
@@ -135,3 +135,56 @@ def tetrahedralize(
     vertices = vertices.astype(np.float64, copy=False)
     faces = faces.astype(np.int32, copy=False)
     return PyfTetWildWrapper.tetrahedralize_mesh(vertices, faces, optimize, edge_length_fac)
+
+
+def tetrahedralize_csg(
+    csg_file: str,
+    epsilon: float = 1e-3,
+    edge_length_r: float = 0.05,
+    stop_energy: float = 10.0,
+    coarsen: bool = True,
+) -> "pv.UnstructuredGrid":
+    """
+    Generate a tetrahedral mesh based on a the CSG tree specified in the csf_file.
+
+    Parameters
+    ----------
+    csg_file : str
+        Path to the input json file.
+    epsilon : float, default 1e-3
+        Envelop size, specifying the maximum distance of the output surface from the input surface,
+        relative to the bounding box size.
+    edge_length_r : float, default: 0.05
+        Tetrahedral edge length as a function of bounding box diagional. The
+        default ideal edge length is bb/20 (bounding box divided by 20).
+    stop_energy : float, default: 10.0
+        The mesh optimization stops when the  conformal AMIPS energy reaches 'stop_energy'.
+    coarsen : bool, default: true
+       Coarsen the output as much as possible, while maintaining the mesh quality.
+
+    Returns
+    -------
+    pv.UnstructuredGrid
+        The converted unstructured grid containing only tetrahedra,
+        with a cell attribute 'marker' indicating which of the input surfaces the cell belongs to.
+    """
+    try:
+        import pyvista as pv
+    except:
+        raise ModuleNotFoundError(
+            "Install PyVista to use this feature with:\n\npip install pytetwild[all]"
+        )
+    (tetrahedral_mesh_vertices, tetrahedral_mesh_tetrahedra, tetrahedral_marker) = (
+        PyfTetWildWrapper.tetrahedralize_csg(csg_file, epsilon, edge_length_r, stop_energy, coarsen)
+    )
+    cells = np.hstack(
+        [
+            np.full((tetrahedral_mesh_tetrahedra.shape[0], 1), 4, dtype=np.int32),
+            tetrahedral_mesh_tetrahedra,
+        ]
+    )
+    cell_types = np.full(tetrahedral_mesh_tetrahedra.shape[0], 10, dtype=np.uint8)
+
+    grid = pv.UnstructuredGrid(cells, cell_types, tetrahedral_mesh_vertices)
+    grid["marker"] = tetrahedral_marker
+    return grid

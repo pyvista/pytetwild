@@ -49,6 +49,7 @@ _skbuild/
 # cmake
 .ninja_deps
 .ninja_log
+.cmake
 CMakeCache.txt
 CMakeFiles/
 CMakeInit.txt
