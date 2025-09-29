@@ -1,6 +1,6 @@
 [submodule "src/fTetWild"]
 	path = src/fTetWild
-	url = https://github.com/wildmeshing/fTetWild
+	url = https://github.com/MariusCausemann/fTetWild
 [submodule "src/pybind11"]
 	path = src/pybind11
 	url = https://github.com/pybind/pybind11.git

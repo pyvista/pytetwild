@@ -19,7 +19,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest]
+        os: [ubuntu-latest, windows-latest, macos-15-intel, macos-15]
 
     steps:
       - uses: actions/checkout@v4
@@ -33,7 +33,7 @@ jobs:
       - name: Install Dependencies (Windows)
         if: runner.os == 'Windows'
         shell: powershell
-        run: conda install -c conda-forge mpir -y
+        run: conda install -c conda-forge mpir zlib -y
 
       - name: Set env (Windows)
         if: runner.os == 'Windows'
@@ -43,7 +43,11 @@ jobs:
           echo "GMP_LIB=C:\Miniconda\envs\test\Library\lib" >> ${env:GITHUB_ENV}
 
       - name: Build wheels
-        uses: pypa/cibuildwheel@v2.16.5
+        uses: pypa/cibuildwheel@v3.2.0
+        env:
+          CIBW_ENVIRONMENT_MACOS: 'MACOSX_DEPLOYMENT_TARGET="15.0"'
+          CIBW_ARCHS_MACOS: "auto"
+
 
       - name: List generated wheels
         run: ls ./wheelhouse/*
@@ -71,6 +75,14 @@ jobs:
           libboost-thread-dev \
           libglu1-mesa-dev \
           libsuitesparse-dev \
+          libxi-dev \
+          libxcursor-dev \
+          libxinerama-dev \
+          libxrandr-dev \
+          libx11-dev \
+          libxcb1-dev \
+          libxau-dev \
+          libxdmcp-dev \
           xorg-dev \
           ccache
 
