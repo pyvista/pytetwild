@@ -75,15 +75,6 @@ jobs:
           libboost-thread-dev \
           libglu1-mesa-dev \
           libsuitesparse-dev \
-          libxi-dev \
-          libxcursor-dev \
-          libxinerama-dev \
-          libxrandr-dev \
-          libx11-dev \
-          libxcb1-dev \
-          libxau-dev \
-          libxdmcp-dev \
-          xorg-dev \
           ccache
 
       - name: Build source distribution
