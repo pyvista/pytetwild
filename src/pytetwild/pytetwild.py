@@ -162,11 +162,12 @@ def tetrahedralize_csg(
     stop_energy : float, default: 10.0
         The mesh optimization stops when the  conformal AMIPS energy reaches 'stop_energy'.
     coarsen : bool, default: true
-       Coarsen the output as much as possible, while maintaining the mesh quality.
+        Coarsen the output as much as possible, while maintaining the mesh quality.
     num_threads : int, default: 0
-       Set number of threads used (0 means all available cores).
+        Set number of threads used (0 means all available cores).
     loglevel : int, default: 6
-       Set log level (0 = most verbose, 6 = minimal output).
+        Set log level (0 = most verbose, 6 = minimal output).
+        
     Returns
     -------
     pv.UnstructuredGrid
