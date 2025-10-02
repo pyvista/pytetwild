@@ -167,7 +167,7 @@ def tetrahedralize_csg(
         Set number of threads used (0 means all available cores).
     loglevel : int, default: 6
         Set log level (0 = most verbose, 6 = minimal output).
-        
+
     Returns
     -------
     pv.UnstructuredGrid
