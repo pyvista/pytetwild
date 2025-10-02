@@ -7,7 +7,9 @@
 #include <floattetwild/Simplification.h>
 #include <floattetwild/TriangleInsertion.h>
 #include <floattetwild/Types.hpp>
+#include <floattetwild/Logger.hpp>
 #include <thread>
+#include <oneapi/tbb/global_control.h>
 
 #include <Eigen/Dense>
 #include <iostream>
@@ -76,52 +78,6 @@ extractMeshData(const floatTetWild::Mesh &mesh) {
   return {vertices, tetrahedra};
 }
 
-std::tuple<std::vector<std::array<float, 3>>, std::vector<std::array<int, 4>>,
-           std::vector<int>>
-extractMeshDataMarker(const floatTetWild::Mesh &mesh) {
-  std::vector<std::array<float, 3>> vertices;
-  std::vector<std::array<int, 4>> tetrahedra;
-  std::vector<int> marker;
-
-  // Remap tet indices for removed vertices
-  std::map<int, int> old_2_new;
-  int cnt_v = 0;
-  const auto skip_vertex = [&mesh](const int i) {
-    return mesh.tet_vertices[i].is_removed;
-  };
-  for (int i = 0; i < mesh.tet_vertices.size(); i++) {
-    if (!skip_vertex(i)) {
-      old_2_new[i] = cnt_v;
-      cnt_v++;
-    }
-  }
-
-  // Extract vertices
-  for (const auto &vertex : mesh.tet_vertices) {
-    if (!vertex.is_removed) {
-      vertices.push_back({{static_cast<float>(vertex.pos.x()),
-                           static_cast<float>(vertex.pos.y()),
-                           static_cast<float>(vertex.pos.z())}});
-    }
-  }
-
-  // Extract tetrahedra
-  for (const auto &tet : mesh.tets) {
-    if (!tet.is_removed) {
-      tetrahedra.push_back(
-          {{old_2_new[tet.indices[0]], old_2_new[tet.indices[1]],
-            old_2_new[tet.indices[2]], old_2_new[tet.indices[3]]}});
-    }
-  }
-  // Extract marker
-  for (const auto &tet : mesh.tets) {
-    if (!tet.is_removed) {
-      marker.push_back(old_2_new[tet.scalar]);
-    }
-  }
-
-  return {vertices, tetrahedra, marker};
-}
 
 template <typename T> GEO::vector<T> array_to_geo_vector(py::array_t<T> array) {
   auto info = array.request();
@@ -324,7 +280,7 @@ PYBIND11_MODULE(PyfTetWildWrapper, m) {
   m.def(
       "tetrahedralize_csg",
       [](const std::string &csg_file, float epsilon, float edge_length_r,
-         float stop_energy, bool coarsen) {
+         float stop_energy, bool coarsen, int num_threads, int log_level) {
         GEO::initialize();
 
         // Initialize mesh and parameters
@@ -334,6 +290,23 @@ PYBIND11_MODULE(PyfTetWildWrapper, m) {
         params.ideal_edge_length_rel = edge_length_r;
         params.stop_energy = stop_energy;
         params.coarsen = coarsen;
+
+        // Set up threading
+        if (num_threads==0){
+          num_threads = std::thread::hardware_concurrency();
+        }
+        params.num_threads = num_threads;
+        const size_t MB         = 1024 * 1024;
+        const size_t stack_size = 64 * MB;
+        std::cout << "TBB threads " << num_threads << std::endl;
+        tbb::global_control parallelism_limit(tbb::global_control::max_allowed_parallelism, num_threads);
+        tbb::global_control stack_size_limit(tbb::global_control::thread_stack_size, stack_size);
+
+
+        floatTetWild::Logger::init(!params.is_quiet, params.log_path);
+        params.log_level = log_level;
+        spdlog::set_level(static_cast<spdlog::level::level_enum>(params.log_level));
+        spdlog::flush_every(std::chrono::seconds(3));
 
         // Load CSG tree
         json csg_tree = json({});
@@ -365,13 +338,6 @@ PYBIND11_MODULE(PyfTetWildWrapper, m) {
           throw std::runtime_error("Parameters initialization failed");
         }
 
-        // Set up threading
-        unsigned int max_threads = std::numeric_limits<unsigned int>::max();
-        unsigned int num_threads =
-            std::max(1u, std::thread::hardware_concurrency());
-        num_threads = std::min(max_threads, num_threads);
-        params.num_threads = num_threads;
-
         // Preprocessing
         bool skip_simplify = false;
         simplify(input_vertices, input_faces, input_tags, tree, params,
@@ -395,12 +361,18 @@ PYBIND11_MODULE(PyfTetWildWrapper, m) {
         // Apply Boolean operations
         boolean_operation(mesh, tree_with_ids, meshes);
 
-        // Extract surface data
-        auto result = extractMeshDataMarker(mesh);
-        auto vertices = std::get<0>(result);
-        auto cells = std::get<1>(result);
-        auto marker = std::get<2>(result);
+        // Extract data
+        auto result = extractMeshData(mesh);
+        auto vertices = result.first;
+        auto cells = result.second;
 
+          // Extract marker
+        std::vector<int> marker;
+        for (const auto &tet : mesh.tets) {
+          if (!tet.is_removed) {
+            marker.push_back(tet.scalar);
+          }
+        }
         // Convert to numpy arrays
         size_t num_vertices = vertices.size();
         size_t num_cells = cells.size();
@@ -436,5 +408,6 @@ PYBIND11_MODULE(PyfTetWildWrapper, m) {
       "Tetrahedralizes a CSG tree from a JSON file, returning numpy arrays of "
       "vertices, cells, and markers.",
       py::arg("csg_file"), py::arg("epsilon"), py::arg("edge_length_r"),
-      py::arg("stop_energy"), py::arg("coarsen"));
+      py::arg("stop_energy"), py::arg("coarsen"), py::arg("num_threads"), 
+      py::arg("log_level"));
 }

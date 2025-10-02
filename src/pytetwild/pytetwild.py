@@ -143,6 +143,8 @@ def tetrahedralize_csg(
     edge_length_r: float = 0.05,
     stop_energy: float = 10.0,
     coarsen: bool = True,
+    num_threads: int = 0,
+    loglevel: int=3
 ) -> "pv.UnstructuredGrid":
     """
     Generate a tetrahedral mesh based on a the CSG tree specified in the csf_file.
@@ -161,7 +163,10 @@ def tetrahedralize_csg(
         The mesh optimization stops when the  conformal AMIPS energy reaches 'stop_energy'.
     coarsen : bool, default: true
        Coarsen the output as much as possible, while maintaining the mesh quality.
-
+    num_threads : int, default: 0
+       Set number of threads used (0 means all available cores).
+    loglevel : int, default: 6
+       Set log level (0 = most verbose, 6 = minimal output).
     Returns
     -------
     pv.UnstructuredGrid
@@ -175,7 +180,7 @@ def tetrahedralize_csg(
             "Install PyVista to use this feature with:\n\npip install pytetwild[all]"
         )
     (tetrahedral_mesh_vertices, tetrahedral_mesh_tetrahedra, tetrahedral_marker) = (
-        PyfTetWildWrapper.tetrahedralize_csg(csg_file, epsilon, edge_length_r, stop_energy, coarsen)
+        PyfTetWildWrapper.tetrahedralize_csg(csg_file, epsilon, edge_length_r, stop_energy, coarsen, num_threads, loglevel)
     )
     cells = np.hstack(
         [
