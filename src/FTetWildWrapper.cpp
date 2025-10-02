@@ -1,15 +1,15 @@
 #include <floattetwild/AABBWrapper.h>
 #include <floattetwild/CSGTreeParser.hpp>
 #include <floattetwild/FloatTetDelaunay.h>
+#include <floattetwild/Logger.hpp>
 #include <floattetwild/Mesh.hpp>
 #include <floattetwild/MeshIO.hpp>
 #include <floattetwild/MeshImprovement.h>
 #include <floattetwild/Simplification.h>
 #include <floattetwild/TriangleInsertion.h>
 #include <floattetwild/Types.hpp>
-#include <floattetwild/Logger.hpp>
-#include <thread>
 #include <oneapi/tbb/global_control.h>
+#include <thread>
 
 #include <Eigen/Dense>
 #include <iostream>
@@ -77,7 +77,6 @@ extractMeshData(const floatTetWild::Mesh &mesh) {
 
   return {vertices, tetrahedra};
 }
-
 
 template <typename T> GEO::vector<T> array_to_geo_vector(py::array_t<T> array) {
   auto info = array.request();
@@ -292,20 +291,22 @@ PYBIND11_MODULE(PyfTetWildWrapper, m) {
         params.coarsen = coarsen;
 
         // Set up threading
-        if (num_threads==0){
+        if (num_threads == 0) {
           num_threads = std::thread::hardware_concurrency();
         }
         params.num_threads = num_threads;
-        const size_t MB         = 1024 * 1024;
+        const size_t MB = 1024 * 1024;
         const size_t stack_size = 64 * MB;
         std::cout << "TBB threads " << num_threads << std::endl;
-        tbb::global_control parallelism_limit(tbb::global_control::max_allowed_parallelism, num_threads);
-        tbb::global_control stack_size_limit(tbb::global_control::thread_stack_size, stack_size);
-
+        tbb::global_control parallelism_limit(
+            tbb::global_control::max_allowed_parallelism, num_threads);
+        tbb::global_control stack_size_limit(
+            tbb::global_control::thread_stack_size, stack_size);
 
         floatTetWild::Logger::init(!params.is_quiet, params.log_path);
         params.log_level = log_level;
-        spdlog::set_level(static_cast<spdlog::level::level_enum>(params.log_level));
+        spdlog::set_level(
+            static_cast<spdlog::level::level_enum>(params.log_level));
         spdlog::flush_every(std::chrono::seconds(3));
 
         // Load CSG tree
@@ -366,7 +367,7 @@ PYBIND11_MODULE(PyfTetWildWrapper, m) {
         auto vertices = result.first;
         auto cells = result.second;
 
-          // Extract marker
+        // Extract marker
         std::vector<int> marker;
         for (const auto &tet : mesh.tets) {
           if (!tet.is_removed) {
@@ -408,6 +409,6 @@ PYBIND11_MODULE(PyfTetWildWrapper, m) {
       "Tetrahedralizes a CSG tree from a JSON file, returning numpy arrays of "
       "vertices, cells, and markers.",
       py::arg("csg_file"), py::arg("epsilon"), py::arg("edge_length_r"),
-      py::arg("stop_energy"), py::arg("coarsen"), py::arg("num_threads"), 
+      py::arg("stop_energy"), py::arg("coarsen"), py::arg("num_threads"),
       py::arg("log_level"));
 }
