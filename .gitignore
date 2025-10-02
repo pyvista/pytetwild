@@ -45,6 +45,8 @@ venv/
 
 # skbuild
 _skbuild/
+.skbuild-info.json
+compile_commands.json
 
 # cmake
 .ninja_deps
@@ -73,6 +75,8 @@ fTetWildWrapper.sln
 x64/
 Release/
 mpir.dll
+_deps
+appleclang*
 
 # cibuildwheel
 wheelhouse
