@@ -144,7 +144,7 @@ def tetrahedralize_csg(
     stop_energy: float = 10.0,
     coarsen: bool = True,
     num_threads: int = 0,
-    loglevel: int=3
+    loglevel: int = 3,
 ) -> "pv.UnstructuredGrid":
     """
     Generate a tetrahedral mesh based on a the CSG tree specified in the csf_file.
@@ -180,7 +180,9 @@ def tetrahedralize_csg(
             "Install PyVista to use this feature with:\n\npip install pytetwild[all]"
         )
     (tetrahedral_mesh_vertices, tetrahedral_mesh_tetrahedra, tetrahedral_marker) = (
-        PyfTetWildWrapper.tetrahedralize_csg(csg_file, epsilon, edge_length_r, stop_energy, coarsen, num_threads, loglevel)
+        PyfTetWildWrapper.tetrahedralize_csg(
+            csg_file, epsilon, edge_length_r, stop_energy, coarsen, num_threads, loglevel
+        )
     )
     cells = np.hstack(
         [
