@@ -97,7 +97,7 @@ def tetrahedralize_pv(
     )
     cell_types = np.full(tetrahedral_mesh_tetrahedra.shape[0], 10, dtype=np.uint8)
 
-    return pv.UnstructuredGrid(cells, cell_types, tetrahedral_mesh_vertices)
+    return pv.UnstructuredGrid(cells, cell_types, tetrahedral_mesh_vertices).clean()
 
 
 def tetrahedralize(
@@ -185,6 +185,6 @@ def tetrahedralize_csg(
     )
     cell_types = np.full(tetrahedral_mesh_tetrahedra.shape[0], 10, dtype=np.uint8)
 
-    grid = pv.UnstructuredGrid(cells, cell_types, tetrahedral_mesh_vertices)
+    grid = pv.UnstructuredGrid(cells, cell_types, tetrahedral_mesh_vertices).clean()
     grid["marker"] = tetrahedral_marker
     return grid
