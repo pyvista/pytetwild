@@ -43,7 +43,6 @@ args = [
     "-DCMAKE_BUILD_TYPE=Release",
     "-DCMAKE_CXX_STANDARD=17",
     "-DBUILD_SHARED_LIBS=OFF",
-    "-DCMAKE_BUILD_PARALLEL_LEVEL=2",
 ]
 
 [tool.pytest.ini_options]
