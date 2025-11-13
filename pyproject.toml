@@ -17,11 +17,10 @@ classifiers = [
     'Operating System :: Microsoft :: Windows',
     'Operating System :: POSIX',
     'Operating System :: MacOS',
-    'Programming Language :: Python :: 3.8',
-    'Programming Language :: Python :: 3.9',
     'Programming Language :: Python :: 3.10',
     'Programming Language :: Python :: 3.11',
     'Programming Language :: Python :: 3.12',
+    'Programming Language :: Python :: 3.13',
 ]
 
 [tool.setuptools.packages.find]
@@ -51,7 +50,7 @@ testpaths = 'tests'
 
 [tool.cibuildwheel]
 archs = ["auto64"]  # 64-bit only
-build = "cp310-* cp311-* cp312-*"  # Only build Python 3.10-3.12 wheels
+build = "cp310-* cp311-* cp312-* cp313-*"  # Only build Python 3.10-3.14 wheels
 skip = ["pp*", "*musllinux*"]  # disable PyPy and musl-based wheels
 test-requires = "pytest pyvista scipy meshio"
 test-command = "pytest {project}/tests -v"
