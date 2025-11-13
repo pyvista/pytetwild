@@ -55,7 +55,7 @@ To tetrahedralize a surface mesh from `PyVista <https://docs.pyvista.org>`_:
 
 You can also work with raw arrays. Here's a simple cube that we turn into tetrahedra.
 
-.. code:: pycon
+.. code:: py
 
    import numpy as np
 

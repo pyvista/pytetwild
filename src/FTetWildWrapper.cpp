@@ -1,12 +1,14 @@
 #include <floattetwild/AABBWrapper.h>
 #include <floattetwild/CSGTreeParser.hpp>
 #include <floattetwild/FloatTetDelaunay.h>
+#include <floattetwild/Logger.hpp>
 #include <floattetwild/Mesh.hpp>
 #include <floattetwild/MeshIO.hpp>
 #include <floattetwild/MeshImprovement.h>
 #include <floattetwild/Simplification.h>
 #include <floattetwild/TriangleInsertion.h>
 #include <floattetwild/Types.hpp>
+#include <oneapi/tbb/global_control.h>
 #include <thread>
 
 #include <Eigen/Dense>
@@ -28,6 +30,8 @@ namespace py = pybind11;
 #include <geogram/mesh/mesh_reorder.h>
 #include <geogram/mesh/mesh_repair.h>
 #include <geogram/numerics/predicates.h>
+
+#include "igl/default_num_threads.h"
 
 using floatTetWild::AABBWrapper;
 using floatTetWild::boolean_operation;
@@ -74,53 +78,6 @@ extractMeshData(const floatTetWild::Mesh &mesh) {
   }
 
   return {vertices, tetrahedra};
-}
-
-std::tuple<std::vector<std::array<float, 3>>, std::vector<std::array<int, 4>>,
-           std::vector<int>>
-extractMeshDataMarker(const floatTetWild::Mesh &mesh) {
-  std::vector<std::array<float, 3>> vertices;
-  std::vector<std::array<int, 4>> tetrahedra;
-  std::vector<int> marker;
-
-  // Remap tet indices for removed vertices
-  std::map<int, int> old_2_new;
-  int cnt_v = 0;
-  const auto skip_vertex = [&mesh](const int i) {
-    return mesh.tet_vertices[i].is_removed;
-  };
-  for (int i = 0; i < mesh.tet_vertices.size(); i++) {
-    if (!skip_vertex(i)) {
-      old_2_new[i] = cnt_v;
-      cnt_v++;
-    }
-  }
-
-  // Extract vertices
-  for (const auto &vertex : mesh.tet_vertices) {
-    if (!vertex.is_removed) {
-      vertices.push_back({{static_cast<float>(vertex.pos.x()),
-                           static_cast<float>(vertex.pos.y()),
-                           static_cast<float>(vertex.pos.z())}});
-    }
-  }
-
-  // Extract tetrahedra
-  for (const auto &tet : mesh.tets) {
-    if (!tet.is_removed) {
-      tetrahedra.push_back(
-          {{old_2_new[tet.indices[0]], old_2_new[tet.indices[1]],
-            old_2_new[tet.indices[2]], old_2_new[tet.indices[3]]}});
-    }
-  }
-  // Extract marker
-  for (const auto &tet : mesh.tets) {
-    if (!tet.is_removed) {
-      marker.push_back(old_2_new[tet.scalar]);
-    }
-  }
-
-  return {vertices, tetrahedra, marker};
 }
 
 template <typename T> GEO::vector<T> array_to_geo_vector(py::array_t<T> array) {
@@ -324,7 +281,7 @@ PYBIND11_MODULE(PyfTetWildWrapper, m) {
   m.def(
       "tetrahedralize_csg",
       [](const std::string &csg_file, float epsilon, float edge_length_r,
-         float stop_energy, bool coarsen) {
+         float stop_energy, bool coarsen, int num_threads, int log_level) {
         GEO::initialize();
 
         // Initialize mesh and parameters
@@ -334,6 +291,29 @@ PYBIND11_MODULE(PyfTetWildWrapper, m) {
         params.ideal_edge_length_rel = edge_length_r;
         params.stop_energy = stop_energy;
         params.coarsen = coarsen;
+        // params.use_general_wn = true;
+
+        // Set up threading
+        if (num_threads == 0) {
+          num_threads = std::thread::hardware_concurrency();
+        }
+        // IGL has issues with a nested for loop and oversubscription, see
+        // https://github.com/libigl/libigl/issues/2412
+        igl::default_num_threads(std::ceil(std::sqrt(num_threads)));
+        params.num_threads = num_threads;
+        const size_t MB = 1024 * 1024;
+        const size_t stack_size = 64 * MB;
+        std::cout << "TBB threads " << num_threads << std::endl;
+        tbb::global_control parallelism_limit(
+            tbb::global_control::max_allowed_parallelism, num_threads);
+        tbb::global_control stack_size_limit(
+            tbb::global_control::thread_stack_size, stack_size);
+
+        floatTetWild::Logger::init(!params.is_quiet, params.log_path);
+        params.log_level = log_level;
+        spdlog::set_level(
+            static_cast<spdlog::level::level_enum>(params.log_level));
+        spdlog::flush_every(std::chrono::seconds(3));
 
         // Load CSG tree
         json csg_tree = json({});
@@ -350,6 +330,35 @@ PYBIND11_MODULE(PyfTetWildWrapper, m) {
         std::vector<std::string> meshes;
         CSGTreeParser::get_meshes(csg_tree, meshes, tree_with_ids);
 
+        // Pre-check all input meshes for non-finite (NaN/Inf) coordinates.
+        py::print("Pre-checking CSG input meshes for NaN/Inf values...");
+        for (const auto &mesh_file : meshes) {
+          std::vector<Vector3> temp_vertices;
+          std::vector<Vector3i> temp_faces;
+          std::vector<int> temp_tags;
+          GEO::Mesh temp_sf_mesh; // Dummy, but load_and_merge requires it
+
+          // We use load_and_merge with a single-item list
+          if (!CSGTreeParser::load_and_merge(
+                  {mesh_file}, // Load just this one file
+                  temp_vertices, temp_faces, temp_sf_mesh, temp_tags)) {
+            throw std::runtime_error("Failed to pre-load mesh for checking: " +
+                                     mesh_file);
+          }
+
+          // The check for NaN/Inf
+          for (const auto &v : temp_vertices) {
+            if (!std::isfinite(v.x()) || !std::isfinite(v.y()) ||
+                !std::isfinite(v.z())) {
+              throw std::runtime_error(
+                  "FATAL: Input mesh file contains non-finite (NaN/Inf) vertex "
+                  "coordinates: " +
+                  mesh_file);
+            }
+          }
+        }
+        py::print("All input meshes passed check.");
+
         std::vector<Vector3> input_vertices;
         std::vector<Vector3i> input_faces;
         std::vector<int> input_tags;
@@ -364,13 +373,6 @@ PYBIND11_MODULE(PyfTetWildWrapper, m) {
         if (!params.init(tree.get_sf_diag())) {
           throw std::runtime_error("Parameters initialization failed");
         }
-
-        // Set up threading
-        unsigned int max_threads = std::numeric_limits<unsigned int>::max();
-        unsigned int num_threads =
-            std::max(1u, std::thread::hardware_concurrency());
-        num_threads = std::min(max_threads, num_threads);
-        params.num_threads = num_threads;
 
         // Preprocessing
         bool skip_simplify = false;
@@ -389,18 +391,27 @@ PYBIND11_MODULE(PyfTetWildWrapper, m) {
         optimization(input_vertices, input_faces, input_tags, is_face_inserted,
                      mesh, tree, {{1, 1, 1, 1}});
 
+        std::cout << "optimization finished" << std::endl;
         // Correct surface orientation
         correct_tracked_surface_orientation(mesh, tree);
+        std::cout << "correct surface orientation finished" << std::endl;
 
         // Apply Boolean operations
         boolean_operation(mesh, tree_with_ids, meshes);
+        std::cout << "boolean operation finished " << std::endl;
 
-        // Extract surface data
-        auto result = extractMeshDataMarker(mesh);
-        auto vertices = std::get<0>(result);
-        auto cells = std::get<1>(result);
-        auto marker = std::get<2>(result);
+        // Extract data
+        auto result = extractMeshData(mesh);
+        auto vertices = result.first;
+        auto cells = result.second;
 
+        // Extract marker
+        std::vector<int> marker;
+        for (const auto &tet : mesh.tets) {
+          if (!tet.is_removed) {
+            marker.push_back(tet.scalar);
+          }
+        }
         // Convert to numpy arrays
         size_t num_vertices = vertices.size();
         size_t num_cells = cells.size();
@@ -436,5 +447,6 @@ PYBIND11_MODULE(PyfTetWildWrapper, m) {
       "Tetrahedralizes a CSG tree from a JSON file, returning numpy arrays of "
       "vertices, cells, and markers.",
       py::arg("csg_file"), py::arg("epsilon"), py::arg("edge_length_r"),
-      py::arg("stop_energy"), py::arg("coarsen"));
+      py::arg("stop_energy"), py::arg("coarsen"), py::arg("num_threads"),
+      py::arg("log_level"));
 }

@@ -22,13 +22,13 @@ jobs:
         os: [ubuntu-latest, windows-latest, macos-15-intel, macos-15]
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           submodules: true
 
       - name: Setup Miniconda (Windows)
         if: runner.os == 'Windows'
-        uses: conda-incubator/setup-miniconda@v3.0.3
+        uses: conda-incubator/setup-miniconda@v3.2.0
 
       - name: Install Dependencies (Windows)
         if: runner.os == 'Windows'
@@ -43,16 +43,15 @@ jobs:
           echo "GMP_LIB=C:\Miniconda\envs\test\Library\lib" >> ${env:GITHUB_ENV}
 
       - name: Build wheels
-        uses: pypa/cibuildwheel@v3.2.0
+        uses: pypa/cibuildwheel@v3.3.0
         env:
           CIBW_ENVIRONMENT_MACOS: 'MACOSX_DEPLOYMENT_TARGET="15.0"'
           CIBW_ARCHS_MACOS: "auto"
 
-
       - name: List generated wheels
         run: ls ./wheelhouse/*
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v5
         with:
           path: ./wheelhouse/*.whl
           name: pytetwild-wheel-${{ matrix.os }}
@@ -61,7 +60,7 @@ jobs:
     name: Build source distribution
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           submodules: true
 
@@ -75,15 +74,6 @@ jobs:
           libboost-thread-dev \
           libglu1-mesa-dev \
           libsuitesparse-dev \
-          libxi-dev \
-          libxcursor-dev \
-          libxinerama-dev \
-          libxrandr-dev \
-          libx11-dev \
-          libxcb1-dev \
-          libxau-dev \
-          libxdmcp-dev \
-          xorg-dev \
           ccache
 
       - name: Build source distribution
@@ -119,7 +109,7 @@ jobs:
     permissions:
       id-token: write  # this permission is mandatory for trusted publishing
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v6
       - name: Flatten directory structure
         run: |
           mkdir -p dist/
