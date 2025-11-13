@@ -31,6 +31,8 @@ namespace py = pybind11;
 #include <geogram/mesh/mesh_repair.h>
 #include <geogram/numerics/predicates.h>
 
+#include "igl/default_num_threads.h"
+
 using floatTetWild::AABBWrapper;
 using floatTetWild::boolean_operation;
 using floatTetWild::CSGTreeParser;
@@ -289,11 +291,15 @@ PYBIND11_MODULE(PyfTetWildWrapper, m) {
         params.ideal_edge_length_rel = edge_length_r;
         params.stop_energy = stop_energy;
         params.coarsen = coarsen;
+        // params.use_general_wn = true;
 
         // Set up threading
         if (num_threads == 0) {
           num_threads = std::thread::hardware_concurrency();
         }
+        // IGL has issues with a nested for loop and oversubscription, see
+        // https://github.com/libigl/libigl/issues/2412
+        igl::default_num_threads(std::ceil(std::sqrt(num_threads)));
         params.num_threads = num_threads;
         const size_t MB = 1024 * 1024;
         const size_t stack_size = 64 * MB;
@@ -323,6 +329,35 @@ PYBIND11_MODULE(PyfTetWildWrapper, m) {
         json tree_with_ids;
         std::vector<std::string> meshes;
         CSGTreeParser::get_meshes(csg_tree, meshes, tree_with_ids);
+
+        // Pre-check all input meshes for non-finite (NaN/Inf) coordinates.
+        py::print("Pre-checking CSG input meshes for NaN/Inf values...");
+        for (const auto &mesh_file : meshes) {
+          std::vector<Vector3> temp_vertices;
+          std::vector<Vector3i> temp_faces;
+          std::vector<int> temp_tags;
+          GEO::Mesh temp_sf_mesh; // Dummy, but load_and_merge requires it
+
+          // We use load_and_merge with a single-item list
+          if (!CSGTreeParser::load_and_merge(
+                  {mesh_file}, // Load just this one file
+                  temp_vertices, temp_faces, temp_sf_mesh, temp_tags)) {
+            throw std::runtime_error("Failed to pre-load mesh for checking: " +
+                                     mesh_file);
+          }
+
+          // The check for NaN/Inf
+          for (const auto &v : temp_vertices) {
+            if (!std::isfinite(v.x()) || !std::isfinite(v.y()) ||
+                !std::isfinite(v.z())) {
+              throw std::runtime_error(
+                  "FATAL: Input mesh file contains non-finite (NaN/Inf) vertex "
+                  "coordinates: " +
+                  mesh_file);
+            }
+          }
+        }
+        py::print("All input meshes passed check.");
 
         std::vector<Vector3> input_vertices;
         std::vector<Vector3i> input_faces;
@@ -356,11 +391,14 @@ PYBIND11_MODULE(PyfTetWildWrapper, m) {
         optimization(input_vertices, input_faces, input_tags, is_face_inserted,
                      mesh, tree, {{1, 1, 1, 1}});
 
+        std::cout << "optimization finished" << std::endl;
         // Correct surface orientation
         correct_tracked_surface_orientation(mesh, tree);
+        std::cout << "correct surface orientation finished" << std::endl;
 
         // Apply Boolean operations
         boolean_operation(mesh, tree_with_ids, meshes);
+        std::cout << "boolean operation finished " << std::endl;
 
         // Extract data
         auto result = extractMeshData(mesh);
