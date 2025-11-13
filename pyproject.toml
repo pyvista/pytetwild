@@ -43,6 +43,7 @@ args = [
     "-DCMAKE_BUILD_TYPE=Release",
     "-DCMAKE_CXX_STANDARD=17",
     "-DBUILD_SHARED_LIBS=OFF",
+    "-DCMAKE_BUILD_PARALLEL_LEVEL=2",
 ]
 
 [tool.pytest.ini_options]
@@ -51,7 +52,7 @@ testpaths = 'tests'
 [tool.cibuildwheel]
 archs = ["auto64"]  # 64-bit only
 build = "cp310-* cp311-* cp312-* cp313-*"  # Only build Python 3.10-3.14 wheels
-skip = ["pp*", "*musllinux*"]  # disable PyPy and musl-based wheels
+skip = ["*musllinux*"]  # disable PyPy and musl-based wheels
 test-requires = "pytest pyvista scipy meshio"
 test-command = "pytest {project}/tests -v"
 
