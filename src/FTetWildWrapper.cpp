@@ -291,7 +291,7 @@ PYBIND11_MODULE(PyfTetWildWrapper, m) {
         params.ideal_edge_length_rel = edge_length_r;
         params.stop_energy = stop_energy;
         params.coarsen = coarsen;
-        //params.use_general_wn = true;
+        // params.use_general_wn = true;
 
         // Set up threading
         if (num_threads == 0) {
@@ -332,31 +332,30 @@ PYBIND11_MODULE(PyfTetWildWrapper, m) {
 
         // Pre-check all input meshes for non-finite (NaN/Inf) coordinates.
         py::print("Pre-checking CSG input meshes for NaN/Inf values...");
-        for (const auto& mesh_file : meshes) {
-            std::vector<Vector3> temp_vertices;
-            std::vector<Vector3i> temp_faces;
-            std::vector<int> temp_tags;
-            GEO::Mesh temp_sf_mesh; // Dummy, but load_and_merge requires it
+        for (const auto &mesh_file : meshes) {
+          std::vector<Vector3> temp_vertices;
+          std::vector<Vector3i> temp_faces;
+          std::vector<int> temp_tags;
+          GEO::Mesh temp_sf_mesh; // Dummy, but load_and_merge requires it
 
-            // We use load_and_merge with a single-item list
-            if (!CSGTreeParser::load_and_merge(
-                    {mesh_file}, // Load just this one file
-                    temp_vertices, 
-                    temp_faces,
-                    temp_sf_mesh, 
-                    temp_tags)) 
-            {
-                throw std::runtime_error("Failed to pre-load mesh for checking: " + mesh_file);
-            }
+          // We use load_and_merge with a single-item list
+          if (!CSGTreeParser::load_and_merge(
+                  {mesh_file}, // Load just this one file
+                  temp_vertices, temp_faces, temp_sf_mesh, temp_tags)) {
+            throw std::runtime_error("Failed to pre-load mesh for checking: " +
+                                     mesh_file);
+          }
 
-            // The check for NaN/Inf
-            for (const auto& v : temp_vertices) {
-                if (!std::isfinite(v.x()) || !std::isfinite(v.y()) || !std::isfinite(v.z())) {
-                    throw std::runtime_error(
-                        "FATAL: Input mesh file contains non-finite (NaN/Inf) vertex coordinates: " + 
-                        mesh_file);
-                }
+          // The check for NaN/Inf
+          for (const auto &v : temp_vertices) {
+            if (!std::isfinite(v.x()) || !std::isfinite(v.y()) ||
+                !std::isfinite(v.z())) {
+              throw std::runtime_error(
+                  "FATAL: Input mesh file contains non-finite (NaN/Inf) vertex "
+                  "coordinates: " +
+                  mesh_file);
             }
+          }
         }
         py::print("All input meshes passed check.");
 
