@@ -26,6 +26,12 @@ jobs:
         with:
           submodules: true
 
+      - name: Install build dependencies (Linux ARM)
+        if: matrix.os == 'ubuntu-24.04-arm'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libpthread-stubs0-dev
+
       - name: Setup Miniconda (Windows)
         if: runner.os == 'Windows'
         uses: conda-incubator/setup-miniconda@v3.3.0
