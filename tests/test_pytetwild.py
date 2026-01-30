@@ -30,7 +30,7 @@ def test_tetrahedralize_pv(mesh_generator):
     assert result.n_points > 0, "The resulting mesh should have more than 0 points"
 
 
-def test_tetrahedralize_edge_length():
+def test_tetrahedralize_edge_length() -> None:
     mesh = pv.Cube().triangulate()
     result = tetrahedralize_pv(mesh)
     result_very_coarse = tetrahedralize_pv(mesh, edge_length_fac=1.0)
@@ -39,13 +39,13 @@ def test_tetrahedralize_edge_length():
         tetrahedralize_pv(mesh, edge_length_fac=0.0)
 
 
-def test_tetrahedralize_pv_opt():
+def test_tetrahedralize_pv_opt() -> None:
     mesh = pv.Sphere(phi_resolution=10, theta_resolution=10)
     grid = tetrahedralize_pv(mesh, optimize=True)
-    qual_mean = np.mean(-grid.compute_cell_quality()["CellQuality"])
+    qual_mean = np.mean(grid.cell_quality()["scaled_jacobian"])
 
     grid_no_opt = tetrahedralize_pv(mesh, optimize=False)
-    qual_mean_no_opt = np.mean(-grid_no_opt.compute_cell_quality()["CellQuality"])
+    qual_mean_no_opt = np.mean(grid_no_opt.cell_quality()["scaled_jacobian"])
     assert qual_mean > qual_mean_no_opt
 
 
@@ -54,7 +54,7 @@ def test_tetrahedralize_pv_opt():
 def test_tetrahedralize(mesh_generator):
     mesh = mesh_generator()
     vertices = mesh.points
-    faces = mesh.faces.reshape((-1, 4))[:, 1:4]
+    faces = mesh._connectivity_array.reshape(-1, 3)
 
     vertices_result, tetrahedra_result = tetrahedralize(vertices, faces, edge_length_fac=0.5)
     assert isinstance(vertices_result, np.ndarray), "The vertices result should be a numpy array"

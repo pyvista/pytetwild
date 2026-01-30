@@ -80,3 +80,6 @@ appleclang*
 
 # cibuildwheel
 wheelhouse
+
+# test files
+tests/test_data/csgtree.json
