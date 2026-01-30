@@ -77,9 +77,13 @@ Release/
 mpir.dll
 _deps
 appleclang*
+gnu_14.3_cxx17_64_release/
 
 # cibuildwheel
 wheelhouse
 
 # test files
 tests/test_data/csgtree.json
+
+# nixos
+shell.nix
