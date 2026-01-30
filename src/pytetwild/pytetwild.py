@@ -41,12 +41,12 @@ def _ugrid_from_regular_cells(
         Point coordinates.
     cells : np.ndarray[np.int32]
         Cell connectivity without padding. Cell type inferred from shape.
-    grid : pyvista.UnstructuredGrid, optional
-        Overwrite existing grid.
 
     Returns
     -------
     pyvista.UnstructuredGrid
+        Unstructured grid.
+
     """
     try:
         import pyvista.core as pv
@@ -94,7 +94,6 @@ def tetrahedralize_pv(
     optimize: bool = True,
     simplify: bool = True,
     epsilon: float = 1e-3,
-    edge_length_r: float = 0.05,
     stop_energy: float = 10.0,
     coarsen: bool = False,
     num_threads: int = 0,
@@ -120,9 +119,6 @@ def tetrahedralize_pv(
     epsilon : float, default 1e-3
         Envelop size, specifying the maximum distance of the output surface
         from the input surface, relative to the bounding box size.
-    edge_length_r : float, default: 0.05
-        Tetrahedral edge length as a function of bounding box diagonal. The
-        default ideal edge length is bb/20 (bounding box divided by 20).
     stop_energy : float, default: 10.0
         The mesh optimization stops when the conformal AMIPS energy reaches
         ``stop_energy``.
@@ -203,7 +199,6 @@ def tetrahedralize(
     optimize: bool = True,
     simplify: bool = True,
     epsilon: float = 1e-3,
-    edge_length_r: float = 0.05,
     stop_energy: float = 10.0,
     coarsen: bool = False,
     num_threads: int = 0,
@@ -219,20 +214,17 @@ def tetrahedralize(
         The vertices of the mesh.
     faces : np.ndarray[np.int32]
         The faces of the mesh.
-    optimize : bool
-        Improve the minimum scaled Jacobean for each cell. This leads to higher
-        cell quality at the expense of computation time.
     edge_length_fac : float, default: 0.05
         Tetrahedral edge length as a function of bounding box diagonal. The
         default ideal edge length is bb/20 (bounding box divided by 20).
+    optimize : bool
+        Improve the minimum scaled Jacobean for each cell. This leads to higher
+        cell quality at the expense of computation time.
     simplify : bool, default: True
         Simplfiy the input mesh surface before tetrahedralization.
     epsilon : float, default 1e-3
         Envelop size, specifying the maximum distance of the output surface
         from the input surface, relative to the bounding box size.
-    edge_length_r : float, default: 0.05
-        Tetrahedral edge length as a function of bounding box diagonal. The
-        default ideal edge length is bb/20 (bounding box divided by 20).
     stop_energy : float, default: 10.0
         The mesh optimization stops when the conformal AMIPS energy reaches
         ``stop_energy``.
@@ -314,7 +306,7 @@ def tetrahedralize_csg(
         belongs to.
     """
     try:
-        import pyvista.core as pv
+        pass
     except:
         raise ModuleNotFoundError(
             "Install PyVista to use this feature with:\n\npip install pytetwild[all]"

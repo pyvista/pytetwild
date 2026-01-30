@@ -90,16 +90,17 @@ template <typename T> GEO::vector<T> array_to_geo_vector(py::array_t<T> array) {
     geo_vec.data()[i] = ptr[i]; // Copy each element.
   }
 
-  // should implement  
+  // should implement
   // std::memcpy(geo_vec.data(), info.ptr, info.size * sizeof(T));
 
   return geo_vec;
 }
 
-
 std::pair<std::vector<std::array<float, 3>>, std::vector<std::array<int, 4>>>
 tetrahedralize(GEO::vector<double> &vertices, GEO::vector<geo_index_t> &faces,
-               bool optimize, bool skip_simplify, float scale_fac, float epsilon, float stop_energy, bool coarsen, int _num_threads, int loglevel, bool quiet) {
+               bool optimize, bool skip_simplify, float scale_fac,
+               float epsilon, float stop_energy, bool coarsen, int _num_threads,
+               int loglevel, bool quiet) {
   using namespace floatTetWild;
   using namespace Eigen;
 
@@ -116,21 +117,21 @@ tetrahedralize(GEO::vector<double> &vertices, GEO::vector<geo_index_t> &faces,
   if (sf_mesh.cells.nb() != 0 && sf_mesh.facets.nb() == 0) {
     sf_mesh.cells.compute_borders();
   }
-  if (!quiet){
+  if (!quiet) {
     sf_mesh.show_stats("I/O");
-    std::cout << "Loaded mesh data into GEO::Mesh." << std::endl;    
-  }    
+    std::cout << "Loaded mesh data into GEO::Mesh." << std::endl;
+  }
 
   // Initialize AABBWrapper with the loaded GEO::Mesh for collision checking
   AABBWrapper tree(sf_mesh);
-  if (!quiet){  
-      std::cout << "Initialized AABBWrapper." << std::endl;
+  if (!quiet) {
+    std::cout << "Initialized AABBWrapper." << std::endl;
   }
 
   // Create an instance of Mesh to hold the output tetrahedral mesh
   Mesh mesh;
-  if (!quiet){    
-  std::cout << "Created Mesh instance for output." << std::endl;
+  if (!quiet) {
+    std::cout << "Created Mesh instance for output." << std::endl;
   }
 
   // Prepare a vector to track the insertion status of faces
@@ -212,37 +213,41 @@ tetrahedralize(GEO::vector<double> &vertices, GEO::vector<geo_index_t> &faces,
   return extractMeshData(mesh);
 }
 
-
 PYBIND11_MODULE(PyfTetWildWrapper, m) {
   m.doc() = "Pybind11 plugin for FloatTetWild mesh tetrahedralization";
 
-  m.def("tetrahedralize_mesh",
-        [](py::array_t<double> vertices, py::array_t<unsigned int> faces, bool optimize, bool skip_simplify, float edge_length_r, float epsilon, float stop_energy, bool coarsen, int num_threads, int loglevel, bool quiet) {
+  m.def(
+      "tetrahedralize_mesh",
+      [](py::array_t<double> vertices, py::array_t<unsigned int> faces,
+         bool optimize, bool skip_simplify, float edge_length_r, float epsilon,
+         float stop_energy, bool coarsen, int num_threads, int loglevel,
+         bool quiet) {
         // GEO::Logger* geo_logger = GEO::Logger::instance();
         // geo_logger-->initialize();
         GEO::initialize();
-        
+
         py::print("Starting tetrahedralization process...");
 
         // Convert numpy arrays to vectors and call the tetrahedralization
         // function
         GEO::vector<double> vertices_vec = array_to_geo_vector(vertices);
         GEO::vector<geo_index_t> faces_vec = array_to_geo_vector(faces);
-        auto result =
-            tetrahedralize(vertices_vec, faces_vec, optimize, skip_simplify, edge_length_r, epsilon, stop_energy, coarsen, num_threads, loglevel, quiet);
+        auto result = tetrahedralize(
+            vertices_vec, faces_vec, optimize, skip_simplify, edge_length_r,
+            epsilon, stop_energy, coarsen, num_threads, loglevel, quiet);
         auto vertices_result = result.first;
         auto tetrahedra_result = result.second;
-        if (!quiet){
-            py::print("Tetrahedralization complete.");
+        if (!quiet) {
+          py::print("Tetrahedralization complete.");
         }
 
         // Convert results back to numpy arrays
         size_t num_vertices = vertices_result.size();
         size_t num_tetrahedra = tetrahedra_result.size();
-        if (!quiet){        
-            py::print("Number of vertices:", num_vertices);
-            py::print("Number of tetrahedra:", num_tetrahedra);
-        }            
+        if (!quiet) {
+          py::print("Number of vertices:", num_vertices);
+          py::print("Number of tetrahedra:", num_tetrahedra);
+        }
 
         // Prepare numpy array (points)
         size_t shape[2]{num_vertices, 3};
@@ -253,8 +258,8 @@ PYBIND11_MODULE(PyfTetWildWrapper, m) {
             np_verts_access(i, j) = vertices_result[i][j];
           }
         }
-        if (!quiet){        
-            py::print("Prepared numpy array for points.");
+        if (!quiet) {
+          py::print("Prepared numpy array for points.");
         }
 
         // Prepare numpy array (tetrahedra)
@@ -266,10 +271,10 @@ PYBIND11_MODULE(PyfTetWildWrapper, m) {
             np_tets_access(i, j) = tetrahedra_result[i][j];
           }
         }
-        if (!quiet){
+        if (!quiet) {
           py::print("Prepared numpy array for tetrahedra.");
           py::print("Tetrahedralization process completed successfully.");
-        }          
+        }
 
         return std::make_pair(np_vertices, np_tetrahedra);
       },
@@ -374,7 +379,8 @@ PYBIND11_MODULE(PyfTetWildWrapper, m) {
 
         // Preprocessing
         bool skip_simplify = false;
-        simplify(input_vertices, input_faces, input_tags, tree, params, skip_simplify);
+        simplify(input_vertices, input_faces, input_tags, tree, params,
+                 skip_simplify);
         tree.init_b_mesh_and_tree(input_vertices, input_faces, mesh);
 
         // Tetrahedralization
