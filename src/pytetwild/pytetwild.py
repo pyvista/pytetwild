@@ -314,7 +314,7 @@ def tetrahedralize_csg(
         belongs to.
     """
     try:
-        import pyvista.core as pv
+        pass
     except:
         raise ModuleNotFoundError(
             "Install PyVista to use this feature with:\n\npip install pytetwild[all]"
