@@ -21,6 +21,7 @@ classifiers = [
     'Programming Language :: Python :: 3.11',
     'Programming Language :: Python :: 3.12',
     'Programming Language :: Python :: 3.13',
+    'Programming Language :: Python :: 3.14',
 ]
 requires-python = ">=3.10,<3.15"
 
@@ -38,6 +39,7 @@ dev = ["pytest", "pre-commit", "pyvista", "scipy", "meshio"]
 [tool.scikit-build]
 build-dir = "./build"
 editable.mode = "inplace"
+wheel.py-api = "cp312"
 
 [tool.scikit-build.cmake]
 args = [
