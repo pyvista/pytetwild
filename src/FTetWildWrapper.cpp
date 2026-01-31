@@ -42,43 +42,64 @@ using floatTetWild::json;
 using floatTetWild::Vector3;
 using floatTetWild::Vector3i;
 
-std::pair<std::vector<std::array<float, 3>>, std::vector<std::array<int, 4>>>
-extractMeshData(const floatTetWild::Mesh &mesh) {
-  std::vector<std::array<float, 3>> vertices;
-  std::vector<std::array<int, 4>> tetrahedra;
-
-  // Remap tet indices for removed vertices
-  std::map<int, int> old_2_new;
-  int cnt_v = 0;
-  const auto skip_vertex = [&mesh](const int i) {
-    return mesh.tet_vertices[i].is_removed;
-  };
-  for (int i = 0; i < mesh.tet_vertices.size(); i++) {
-    if (!skip_vertex(i)) {
-      old_2_new[i] = cnt_v;
-      cnt_v++;
+// Convert a tetwild mesh to numpy vertex and int arrays
+std::pair<py::array_t<double>, py::array_t<int>>
+extractMeshDataNumpy(const floatTetWild::Mesh &mesh, bool vtk_ordering) {
+  std::map<int, int> old2new;
+  int nv = 0;
+  for (int i = 0; i < mesh.tet_vertices.size(); ++i) {
+    if (!mesh.tet_vertices[i].is_removed) {
+      old2new[i] = nv++;
     }
   }
 
-  // Extract vertices
-  for (const auto &vertex : mesh.tet_vertices) {
-    if (!vertex.is_removed) {
-      vertices.push_back({{static_cast<float>(vertex.pos.x()),
-                           static_cast<float>(vertex.pos.y()),
-                           static_cast<float>(vertex.pos.z())}});
+  int nt = 0;
+  for (const auto &t : mesh.tets)
+    if (!t.is_removed)
+      ++nt;
+
+  py::array_t<double> V({nv, 3});
+  py::array_t<int> T({nt, 4});
+
+  auto v = V.mutable_unchecked<2>();
+  auto t = T.mutable_unchecked<2>();
+
+  int vi = 0;
+  for (const auto &vert : mesh.tet_vertices) {
+    if (vert.is_removed)
+      continue;
+    v(vi, 0) = vert.pos.x();
+    v(vi, 1) = vert.pos.y();
+    v(vi, 2) = vert.pos.z();
+    ++vi;
+  }
+
+  int ti = 0;
+
+  // VTK ordering is different than tetwild's ordering
+  if (vtk_ordering) {
+    for (const auto &tet : mesh.tets) {
+      if (tet.is_removed)
+        continue;
+      t(ti, 0) = old2new[tet.indices[0]];
+      t(ti, 1) = old2new[tet.indices[1]];
+      t(ti, 2) = old2new[tet.indices[3]];
+      t(ti, 3) = old2new[tet.indices[2]];
+      ++ti;
+    }
+  } else {
+    for (const auto &tet : mesh.tets) {
+      if (tet.is_removed)
+        continue;
+      t(ti, 0) = old2new[tet.indices[0]];
+      t(ti, 1) = old2new[tet.indices[1]];
+      t(ti, 2) = old2new[tet.indices[2]];
+      t(ti, 3) = old2new[tet.indices[3]];
+      ++ti;
     }
   }
 
-  // Extract tetrahedra
-  for (const auto &tet : mesh.tets) {
-    if (!tet.is_removed) {
-      tetrahedra.push_back(
-          {{old_2_new[tet.indices[0]], old_2_new[tet.indices[1]],
-            old_2_new[tet.indices[2]], old_2_new[tet.indices[3]]}});
-    }
-  }
-
-  return {vertices, tetrahedra};
+  return {V, T};
 }
 
 template <typename T> GEO::vector<T> array_to_geo_vector(py::array_t<T> array) {
@@ -97,11 +118,12 @@ template <typename T> GEO::vector<T> array_to_geo_vector(py::array_t<T> array) {
   return geo_vec;
 }
 
-std::pair<std::vector<std::array<float, 3>>, std::vector<std::array<int, 4>>>
+std::pair<py::array_t<double>, py::array_t<int>>
 tetrahedralize(GEO::vector<double> &vertices, GEO::vector<geo_index_t> &faces,
-               bool optimize, bool skip_simplify, float scale_fac,
-               float epsilon, float stop_energy, bool coarsen, int num_threads,
-               int num_opt_iter, int loglevel, bool quiet) {
+               bool optimize, bool skip_simplify, double edge_length_r,
+               double edge_length_abs, double epsilon, double stop_energy,
+               bool coarsen, int num_threads, int num_opt_iter, int loglevel,
+               bool quiet, bool vtk_ordering) {
   using namespace floatTetWild;
   using namespace Eigen;
 
@@ -154,16 +176,18 @@ tetrahedralize(GEO::vector<double> &vertices, GEO::vector<geo_index_t> &faces,
         sf_mesh.facets.vertex(i, 2);
 
   Parameters &params = mesh.params;
-  if (!params.init(tree.get_sf_diag() * scale_fac * 20)) {
-    throw std::runtime_error(
-        "FTetWildWrapper.cpp: Parameters initialization failed");
-  }
   params.eps_rel = epsilon;
-  // params.ideal_edge_length_rel = edge_length_r;
+  params.ideal_edge_length_rel = edge_length_r;
+  params.ideal_edge_length_abs = edge_length_abs;
   params.stop_energy = stop_energy;
   params.coarsen = coarsen;
   params.is_quiet = quiet;
   params.max_its = num_opt_iter;
+
+  if (!params.init(tree.get_sf_diag())) {
+    throw std::runtime_error(
+        "FTetWildWrapper.cpp: Parameters initialization failed");
+  }
 
   floatTetWild::Logger::init(!params.is_quiet, params.log_path);
   params.log_level = loglevel;
@@ -238,7 +262,7 @@ tetrahedralize(GEO::vector<double> &vertices, GEO::vector<geo_index_t> &faces,
     std::cout << "Tetrahedralization completed. Extracting mesh data..."
               << std::endl;
   }
-  return extractMeshData(mesh);
+  return extractMeshDataNumpy(mesh, vtk_ordering);
 }
 
 PYBIND11_MODULE(PyfTetWildWrapper, m) {
@@ -247,9 +271,10 @@ PYBIND11_MODULE(PyfTetWildWrapper, m) {
   m.def(
       "tetrahedralize_mesh",
       [](py::array_t<double> vertices, py::array_t<unsigned int> faces,
-         bool optimize, bool skip_simplify, float edge_length_r, float epsilon,
-         float stop_energy, bool coarsen, int num_threads, int num_opt_iter,
-         int loglevel, bool quiet) {
+         bool optimize, bool skip_simplify, double edge_length_r,
+         double edge_length_abs, double epsilon, double stop_energy,
+         bool coarsen, int num_threads, int num_opt_iter, int loglevel,
+         bool quiet, bool vtk_ordering) {
         GEO::initialize();
 
         if (quiet) {
@@ -265,52 +290,15 @@ PYBIND11_MODULE(PyfTetWildWrapper, m) {
         // function
         GEO::vector<double> vertices_vec = array_to_geo_vector(vertices);
         GEO::vector<geo_index_t> faces_vec = array_to_geo_vector(faces);
-        auto result =
-            tetrahedralize(vertices_vec, faces_vec, optimize, skip_simplify,
-                           edge_length_r, epsilon, stop_energy, coarsen,
-                           num_threads, num_opt_iter, loglevel, quiet);
-        auto vertices_result = result.first;
-        auto tetrahedra_result = result.second;
+        auto result = tetrahedralize(
+            vertices_vec, faces_vec, optimize, skip_simplify, edge_length_r,
+            edge_length_abs, epsilon, stop_energy, coarsen, num_threads,
+            num_opt_iter, loglevel, quiet, vtk_ordering);
         if (!quiet) {
           py::print("Tetrahedralization complete.");
         }
 
-        // Convert results back to numpy arrays
-        size_t num_vertices = vertices_result.size();
-        size_t num_tetrahedra = tetrahedra_result.size();
-        if (!quiet) {
-          py::print("Number of vertices:", num_vertices);
-          py::print("Number of tetrahedra:", num_tetrahedra);
-        }
-
-        // Prepare numpy array (points)
-        size_t shape[2]{num_vertices, 3};
-        auto np_vertices = py::array_t<float>(shape);
-        auto np_verts_access = np_vertices.mutable_unchecked<2>();
-        for (size_t i = 0; i < num_vertices; ++i) {
-          for (size_t j = 0; j < 3; ++j) {
-            np_verts_access(i, j) = vertices_result[i][j];
-          }
-        }
-        if (!quiet) {
-          py::print("Prepared numpy array for points.");
-        }
-
-        // Prepare numpy array (tetrahedra)
-        size_t shape_tet[2]{num_tetrahedra, 4};
-        auto np_tetrahedra = py::array_t<int>(shape_tet);
-        auto np_tets_access = np_tetrahedra.mutable_unchecked<2>();
-        for (size_t i = 0; i < num_tetrahedra; ++i) {
-          for (size_t j = 0; j < 4; ++j) {
-            np_tets_access(i, j) = tetrahedra_result[i][j];
-          }
-        }
-        if (!quiet) {
-          py::print("Prepared numpy array for tetrahedra.");
-          py::print("Tetrahedralization process completed successfully.");
-        }
-
-        return std::make_pair(np_vertices, np_tetrahedra);
+        return result;
       },
       "Tetrahedralizes a mesh given vertices and faces arrays, returning numpy "
       "arrays of tetrahedra and points.");
@@ -318,7 +306,8 @@ PYBIND11_MODULE(PyfTetWildWrapper, m) {
   m.def(
       "tetrahedralize_csg",
       [](const std::string &csg_file, float epsilon, float edge_length_r,
-         float stop_energy, bool coarsen, int num_threads, int log_level) {
+         float stop_energy, bool coarsen, int num_threads, int log_level,
+         bool vtk_ordering) {
         GEO::initialize();
 
         // Initialize mesh and parameters
@@ -438,9 +427,9 @@ PYBIND11_MODULE(PyfTetWildWrapper, m) {
         std::cout << "boolean operation finished " << std::endl;
 
         // Extract data
-        auto result = extractMeshData(mesh);
-        auto vertices = result.first;
-        auto cells = result.second;
+        auto result = extractMeshDataNumpy(mesh, vtk_ordering);
+        auto np_vertices = result.first;
+        auto np_cells = result.second;
 
         // Extract marker
         std::vector<int> marker;
@@ -449,34 +438,16 @@ PYBIND11_MODULE(PyfTetWildWrapper, m) {
             marker.push_back(tet.scalar);
           }
         }
-        // Convert to numpy arrays
-        size_t num_vertices = vertices.size();
-        size_t num_cells = cells.size();
 
-        size_t v_shape[2] = {num_vertices, 3};
-        auto np_vertices = py::array_t<float>(v_shape);
-        auto v_access = np_vertices.mutable_unchecked<2>();
-        for (size_t i = 0; i < num_vertices; ++i) {
-          for (size_t j = 0; j < 3; ++j) {
-            v_access(i, j) = vertices[i][j];
-          }
-        }
-
-        size_t c_shape[2] = {num_cells, 4};
-        auto np_cells = py::array_t<int>(c_shape);
-        auto c_access = np_cells.mutable_unchecked<2>();
-        for (size_t i = 0; i < num_cells; ++i) {
-          for (size_t j = 0; j < 4; ++j) {
-            c_access(i, j) = cells[i][j];
-          }
-        }
-
+        // Extract markers
+        size_t num_cells = np_cells.shape(0);
         size_t m_shape[1] = {num_cells};
         auto np_markers = py::array_t<int>(m_shape);
         auto m_access = np_markers.mutable_unchecked<1>();
         for (size_t i = 0; i < num_cells; ++i) {
           m_access(i) = marker[i];
         }
+
         py::print(
             "Tetrahedralization process from CSG completed successfully.");
         return std::make_tuple(np_vertices, np_cells, np_markers);
@@ -485,5 +456,5 @@ PYBIND11_MODULE(PyfTetWildWrapper, m) {
       "vertices, cells, and markers.",
       py::arg("csg_file"), py::arg("epsilon"), py::arg("edge_length_r"),
       py::arg("stop_energy"), py::arg("coarsen"), py::arg("num_threads"),
-      py::arg("log_level"));
+      py::arg("log_level"), py::arg("vtk_ordering"));
 }

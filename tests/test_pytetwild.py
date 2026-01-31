@@ -1,3 +1,4 @@
+from typing import Callable
 import os
 import numpy as np
 import pyvista as pv
@@ -20,7 +21,7 @@ def default_test_data():
 
 # Parameterized test for tetrahedralize_pv function
 @pytest.mark.parametrize("mesh_generator", [pv.Icosphere, pv.examples.download_bunny_coarse])
-def test_tetrahedralize_pv(mesh_generator):
+def test_tetrahedralize_pv(mesh_generator: Callable):
     mesh = mesh_generator()
     result = tetrahedralize_pv(mesh, edge_length_fac=0.5)
     assert isinstance(result, pv.UnstructuredGrid), (

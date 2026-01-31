@@ -7,6 +7,7 @@ def tetrahedralize_mesh(
     optimize: bool,
     skip_simplify: bool,
     edge_length_r: float,
+    edge_length_abs: float,
     epsilon: float,
     stop_energy: float,
     coarsen: bool,
@@ -14,6 +15,7 @@ def tetrahedralize_mesh(
     num_opt_iter: int,
     loglevel: int,
     quiet: bool,
+    vtk_ordering: bool,
 ) -> tuple[np.ndarray, np.ndarray]: ...
 def tetrahedralize_csg(
     csg_file: str,
@@ -23,4 +25,5 @@ def tetrahedralize_csg(
     coarsen: bool,
     num_threads: int,
     log_level: int,
+    vtk_ordering: bool,
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray]: ...

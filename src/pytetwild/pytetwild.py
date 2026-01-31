@@ -91,6 +91,7 @@ def _ugrid_from_regular_cells(
 def tetrahedralize_pv(
     mesh: "pv.PolyData",
     edge_length_fac: float = 0.05,
+    edge_length_abs: float | None = None,
     optimize: bool = True,
     simplify: bool = True,
     epsilon: float = 1e-3,
@@ -110,7 +111,10 @@ def tetrahedralize_pv(
         The input surface mesh. Should be composed of all triangles.
     edge_length_fac : float, default: 0.05
         Tetrahedral edge length as a function of bounding box diagonal. The
-        default ideal edge length is ``bb/20`` (bounding box divided by 20).
+        default ideal edge length is ``bb/20`` (bounding box divided by
+        20). Ignored when ``edge_length_abs`` is input.
+    edge_length_abs : float, optional
+        Absolute ideal edge length. When input ``edge_length_fac`` is ignored.
     optimize : bool, default: True
         Improve the minimum scaled Jacobean for each cell. This leads to higher
         cell quality at the expense of computation time. Optimization level is
@@ -173,15 +177,20 @@ def tetrahedralize_pv(
         mesh = mesh.triangulate()
     _check_edge_length(edge_length_fac)
 
+    if edge_length_abs is None:
+        edge_length_abs = 0.0
+
     vertices = mesh.points
-    faces = mesh._connectivity_array.reshape(-1, 4)
+    faces = mesh._connectivity_array.reshape(-1, 3)
     skip_simplify = not simplify
+    vtk_ordering = True
     tmesh_v, tmesh_c = PyfTetWildWrapper.tetrahedralize_mesh(
         vertices,
         faces,
         optimize,
         skip_simplify,
         edge_length_fac,
+        edge_length_abs,
         epsilon,
         stop_energy,
         coarsen,
@@ -189,10 +198,8 @@ def tetrahedralize_pv(
         num_opt_iter,
         loglevel,
         quiet,
+        vtk_ordering,
     )
-
-    # tetwild cell ordering needs to match VTK ordering
-    tmesh_c[:] = tmesh_c[:, [0, 1, 3, 2]]
     return _ugrid_from_regular_cells(tmesh_v, tmesh_c)
 
 
@@ -200,6 +207,7 @@ def tetrahedralize(
     vertices: NDArray[np.float32] | NDArray[np.float64],
     faces: NDArray[np.int32],
     edge_length_fac: float = 0.05,
+    edge_length_abs: float | None = None,
     optimize: bool = True,
     simplify: bool = True,
     epsilon: float = 1e-3,
@@ -222,6 +230,8 @@ def tetrahedralize(
     edge_length_fac : float, default: 0.05
         Tetrahedral edge length as a function of bounding box diagonal. The
         default ideal edge length is bb/20 (bounding box divided by 20).
+    edge_length_abs : float, optional
+        Absolute ideal edge length. When input ``edge_length_fac`` is ignored.
     optimize : bool
         Improve the minimum scaled Jacobean for each cell. This leads to higher
         cell quality at the expense of computation time.
@@ -258,13 +268,18 @@ def tetrahedralize(
     vertices = vertices.astype(np.float64, copy=False)
     faces = faces.astype(np.int32, copy=False)
 
+    if edge_length_abs is None:
+        edge_length_abs = 0.0
+
     skip_simplify = not simplify
+    vtk_ordering = False
     return PyfTetWildWrapper.tetrahedralize_mesh(
         vertices,
         faces,
         optimize,
         skip_simplify,
         edge_length_fac,
+        edge_length_abs,
         epsilon,
         stop_energy,
         coarsen,
@@ -272,6 +287,7 @@ def tetrahedralize(
         num_opt_iter,
         loglevel,
         quiet,
+        vtk_ordering,
     )
 
 
@@ -319,8 +335,16 @@ def tetrahedralize_csg(
         raise ModuleNotFoundError(
             "Install PyVista to use this feature with:\n\npip install pytetwild[all]"
         )
-    (tmesh_v, tmesh_c, tmesh_marker) = PyfTetWildWrapper.tetrahedralize_csg(
-        csg_file, epsilon, edge_length_r, stop_energy, coarsen, num_threads, loglevel
+    vtk_ordering = True
+    tmesh_v, tmesh_c, tmesh_marker = PyfTetWildWrapper.tetrahedralize_csg(
+        csg_file,
+        epsilon,
+        edge_length_r,
+        stop_energy,
+        coarsen,
+        num_threads,
+        loglevel,
+        vtk_ordering,
     )
 
     ugrid = _ugrid_from_regular_cells(tmesh_v, tmesh_c).clean()
