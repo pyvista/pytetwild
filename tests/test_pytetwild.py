@@ -1,3 +1,4 @@
+import math
 from typing import Callable
 import os
 import numpy as np
@@ -22,7 +23,7 @@ def default_test_data():
 
 # Parameterized test for tetrahedralize_pv function
 @pytest.mark.parametrize("mesh_generator", [pv.Icosphere, pv.examples.download_bunny_coarse])
-def test_tetrahedralize_pv(mesh_generator: Callable):
+def test_tetrahedralize_pv(mesh_generator: Callable) -> None:
     mesh = mesh_generator()
     result = tetrahedralize_pv(mesh, edge_length_fac=0.5)
     assert isinstance(result, pv.UnstructuredGrid), (
@@ -30,6 +31,17 @@ def test_tetrahedralize_pv(mesh_generator: Callable):
     )
     assert result.n_cells > 0, "The resulting mesh should have more than 0 cells"
     assert result.n_points > 0, "The resulting mesh should have more than 0 points"
+
+
+def test_tetrahedralize_abs_edge_len() -> None:
+    """Ensure that absolute edge length works."""
+    mesh = pv.Icosphere()
+    for edge_len_tgt in [0.2, 0.15, 0.1]:
+        ugrid = tetrahedralize_pv(mesh, edge_length_abs=edge_len_tgt, quiet=True)
+
+        edge_len = ugrid.extract_all_edges().compute_cell_sizes()["Length"]
+        mean_edge_len = edge_len.mean()
+        assert np.allclose(edge_len_tgt, mean_edge_len, rtol=0.2)
 
 
 def test_tetrahedralize_edge_length() -> None:

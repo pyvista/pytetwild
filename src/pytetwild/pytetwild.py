@@ -217,7 +217,8 @@ def tetrahedralize(
     num_opt_iter: int = 80,
     loglevel: int = 3,
     quiet: bool = False,
-) -> tuple[NDArray[np.float32], NDArray[np.int32]]:
+    vtk_ordering: bool = False,
+) -> tuple[NDArray[np.float64], NDArray[np.int32]]:
     """
     Convert mesh vertices and faces to a tetrahedral mesh.
 
@@ -255,6 +256,8 @@ def tetrahedralize(
         Set log level (0 = most verbose, 6 = minimal output).
     quiet : bool, default: False
         Disable all output. Overrides ``loglevel``.
+    vtk_ordering : bool, default: False
+        Reorder the tetrahedral cell indices to match VTK's ordering.
 
     Returns
     -------
@@ -267,16 +270,19 @@ def tetrahedralize(
     if not isinstance(faces, np.ndarray):
         raise TypeError("`faces` must be a numpy array")
     vertices = vertices.astype(np.float64, copy=False)
-    faces = faces.astype(np.int32, copy=False)
+    if faces.dtype == np.int32:
+        # we can cheat here and just treat it as unsigned 32 (assuming no negative indices)
+        faces_unsigned = faces.view(np.uint32)
+    else:
+        faces_unsigned = faces.astype(np.uint32, copy=False)
 
     if edge_length_abs is None:
         edge_length_abs = 0.0
 
     skip_simplify = not simplify
-    vtk_ordering = False
     return PyfTetWildWrapper.tetrahedralize_mesh(
         vertices,
-        faces,
+        faces_unsigned,
         optimize,
         skip_simplify,
         edge_length_fac,

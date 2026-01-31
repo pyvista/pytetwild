@@ -3,7 +3,7 @@ from numpy.typing import NDArray
 
 def tetrahedralize_mesh(
     vertices: NDArray[np.float64],
-    faces: NDArray[np.int32],
+    faces: NDArray[np.uint32],
     optimize: bool,
     skip_simplify: bool,
     edge_length_r: float,

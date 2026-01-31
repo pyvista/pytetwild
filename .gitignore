@@ -81,6 +81,8 @@ gnu_14.3_cxx17_64_release/
 src/GPATH
 src/GRTAGS
 src/GTAGS
+.clangd
+libnanobind-static-abi3.a
 
 # cibuildwheel
 wheelhouse
