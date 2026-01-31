@@ -1,6 +1,7 @@
 from typing import Callable
 import os
 import numpy as np
+from numpy.typing import NDArray
 import pyvista as pv
 import vtk
 from scipy.spatial import KDTree
@@ -52,7 +53,7 @@ def test_tetrahedralize_pv_opt() -> None:
 
 # Parameterized test for tetrahedralize function
 @pytest.mark.parametrize("mesh_generator", [pv.Icosphere, pv.examples.download_bunny_coarse])
-def test_tetrahedralize(mesh_generator):
+def test_tetrahedralize(mesh_generator: Callable):
     mesh = mesh_generator()
     vertices = mesh.points
     faces = mesh._connectivity_array.reshape(-1, 3)
@@ -66,7 +67,7 @@ def test_tetrahedralize(mesh_generator):
     assert len(tetrahedra_result) > 0, "There should be more than 0 tetrahedra in the result"
 
 
-def _sample_points_vtk(mesh_pv, dist_btw_pts=0.01):
+def _sample_points_vtk(mesh_pv: pv.PolyData, dist_btw_pts: float = 0.01) -> NDArray[np.float64]:
     point_sampler = vtk.vtkPolyDataPointSampler()
     point_sampler.SetInputData(mesh_pv)
     point_sampler.SetDistance(dist_btw_pts)
@@ -76,7 +77,9 @@ def _sample_points_vtk(mesh_pv, dist_btw_pts=0.01):
     return points_sampled
 
 
-def _symmetric_surf_dist(pts0, pts1):
+def _symmetric_surf_dist(
+    pts0: NDArray[np.float64], pts1: NDArray[np.float64]
+) -> NDArray[np.float64]:
     d_kdtree0, _ = KDTree(pts0).query(pts1)
     d_kdtree1, _ = KDTree(pts1).query(pts0)
     return (np.mean(d_kdtree0) + np.mean(d_kdtree1)) / 2
@@ -85,7 +88,7 @@ def _symmetric_surf_dist(pts0, pts1):
 @pytest.mark.parametrize(
     "mesh_generator", [pv.Icosphere]
 )  # pv.examples.download_bunny_coarse is not closed, so select_enclosed_points fails
-def test_output_points_enclosed(mesh_generator):
+def test_output_points_enclosed(mesh_generator: Callable) -> None:
     input_pv = mesh_generator()
     py_output_pv = tetrahedralize_pv(input_pv, edge_length_fac=0.1)
     additional_input_scaling = 0.01
@@ -96,7 +99,7 @@ def test_output_points_enclosed(mesh_generator):
     )
 
 
-def test_default_output_surf_dist(default_test_data):
+def test_default_output_surf_dist(default_test_data: dict[str, pv.PolyData]) -> None:
     input_pv = default_test_data["input"]
     output_pv = default_test_data["output"]
     py_output_pv = tetrahedralize_pv(input_pv)
@@ -106,7 +109,7 @@ def test_default_output_surf_dist(default_test_data):
     assert surf_dist < 1e-2, "surfs of outputs from c++/py should be similar"
 
 
-def test_csg():
+def test_csg() -> None:
     csgtree = {
         "operation": "union",
         "right": os.path.join(THIS_PATH, "test_data/sphere.stl"),
