@@ -60,7 +60,7 @@ jobs:
       - uses: actions/upload-artifact@v6
         with:
           path: ./wheelhouse/*.whl
-          name: pytetwild-wheel-${{ matrix.os }}
+          name: pytetwild-wheels-${{ matrix.os }}
 
   test_abi3:
     name: Test ABI3 wheels
@@ -78,7 +78,7 @@ jobs:
         python-version: ${{ matrix.python-version }}
     - uses: actions/download-artifact@v7
       with:
-        pattern: pymeshfix-wheels-${{ matrix.os }}
+        pattern: pytetwild-wheels-${{ matrix.os }}
         path: wheels/
     - name: Find ABI3 wheel
       id: find_wheel

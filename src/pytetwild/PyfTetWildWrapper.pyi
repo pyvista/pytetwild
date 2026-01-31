@@ -11,6 +11,7 @@ def tetrahedralize_mesh(
     stop_energy: float,
     coarsen: bool,
     num_threads: int,
+    num_opt_iter: int,
     loglevel: int,
     quiet: bool,
 ) -> tuple[np.ndarray, np.ndarray]: ...

@@ -7,8 +7,15 @@ if($ENV{USE_MAVX})
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mavx")
 endif()
 
+# Enable TBB in fTetWild
+set(FLOAT_TETWILD_USE_TBB ON CACHE BOOL "Enable TBB in fTetWild" FORCE)
+
 # Set the path to the fTetWild project
 set(fTetWild_DIR "${CMAKE_CURRENT_SOURCE_DIR}/src/fTetWild")
+
+# Enable aggressive optimization
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3")
+set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} -O3")
 
 # Add the pybind11 submodule
 set(PYBIND11_NEWPYTHON ON)

@@ -97,6 +97,7 @@ def tetrahedralize_pv(
     stop_energy: float = 10.0,
     coarsen: bool = False,
     num_threads: int = 0,
+    num_opt_iter: int = 80,
     loglevel: int = 3,
     quiet: bool = False,
 ) -> "pv.UnstructuredGrid":
@@ -110,10 +111,10 @@ def tetrahedralize_pv(
     edge_length_fac : float, default: 0.05
         Tetrahedral edge length as a function of bounding box diagonal. The
         default ideal edge length is ``bb/20`` (bounding box divided by 20).
-    optimize : bool
+    optimize : bool, default: True
         Improve the minimum scaled Jacobean for each cell. This leads to higher
         cell quality at the expense of computation time. Optimization level is
-        dependent on ``stop_energy``.
+        dependent on ``stop_energy`` and ``num_opt_iter``.
     simplify : bool, default: True
         Simplfiy the input mesh surface before tetrahedralization.
     epsilon : float, default 1e-3
@@ -127,6 +128,8 @@ def tetrahedralize_pv(
         quality.
     num_threads : int, default: 0
         Set number of threads used. 0 (default) uses all available cores.
+    num_opt_iter : int, default: 80
+        Maximum number of optimization iterations if ``optimize=True``.
     loglevel : int, default: 6
         Set log level (0 = most verbose, 6 = minimal output).
     quiet : bool, default: False
@@ -183,6 +186,7 @@ def tetrahedralize_pv(
         stop_energy,
         coarsen,
         num_threads,
+        num_opt_iter,
         loglevel,
         quiet,
     )
@@ -202,6 +206,7 @@ def tetrahedralize(
     stop_energy: float = 10.0,
     coarsen: bool = False,
     num_threads: int = 0,
+    num_opt_iter: int = 80,
     loglevel: int = 3,
     quiet: bool = False,
 ) -> tuple[NDArray[np.float32], NDArray[np.int32]]:
@@ -233,6 +238,8 @@ def tetrahedralize(
         quality.
     num_threads : int, default: 0
         Set number of threads used. 0 (default) uses all available cores.
+    num_opt_iter : int, default: 80
+        Maximum number of optimization iterations if ``optimize=True``.
     loglevel : int, default: 6
         Set log level (0 = most verbose, 6 = minimal output).
     quiet : bool, default: False
@@ -262,6 +269,7 @@ def tetrahedralize(
         stop_energy,
         coarsen,
         num_threads,
+        num_opt_iter,
         loglevel,
         quiet,
     )

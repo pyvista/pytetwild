@@ -101,7 +101,7 @@ std::pair<std::vector<std::array<float, 3>>, std::vector<std::array<int, 4>>>
 tetrahedralize(GEO::vector<double> &vertices, GEO::vector<geo_index_t> &faces,
                bool optimize, bool skip_simplify, float scale_fac,
                float epsilon, float stop_energy, bool coarsen, int num_threads,
-               int loglevel, bool quiet) {
+               int num_opt_iter, int loglevel, bool quiet) {
   using namespace floatTetWild;
   using namespace Eigen;
 
@@ -163,6 +163,7 @@ tetrahedralize(GEO::vector<double> &vertices, GEO::vector<geo_index_t> &faces,
   params.stop_energy = stop_energy;
   params.coarsen = coarsen;
   params.is_quiet = quiet;
+  params.max_its = num_opt_iter;
 
   floatTetWild::Logger::init(!params.is_quiet, params.log_path);
   params.log_level = loglevel;
@@ -247,8 +248,8 @@ PYBIND11_MODULE(PyfTetWildWrapper, m) {
       "tetrahedralize_mesh",
       [](py::array_t<double> vertices, py::array_t<unsigned int> faces,
          bool optimize, bool skip_simplify, float edge_length_r, float epsilon,
-         float stop_energy, bool coarsen, int num_threads, int loglevel,
-         bool quiet) {
+         float stop_energy, bool coarsen, int num_threads, int num_opt_iter,
+         int loglevel, bool quiet) {
         GEO::initialize();
 
         if (quiet) {
@@ -264,9 +265,10 @@ PYBIND11_MODULE(PyfTetWildWrapper, m) {
         // function
         GEO::vector<double> vertices_vec = array_to_geo_vector(vertices);
         GEO::vector<geo_index_t> faces_vec = array_to_geo_vector(faces);
-        auto result = tetrahedralize(
-            vertices_vec, faces_vec, optimize, skip_simplify, edge_length_r,
-            epsilon, stop_energy, coarsen, num_threads, loglevel, quiet);
+        auto result =
+            tetrahedralize(vertices_vec, faces_vec, optimize, skip_simplify,
+                           edge_length_r, epsilon, stop_energy, coarsen,
+                           num_threads, num_opt_iter, loglevel, quiet);
         auto vertices_result = result.first;
         auto tetrahedra_result = result.second;
         if (!quiet) {
