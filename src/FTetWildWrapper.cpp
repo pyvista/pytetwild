@@ -21,6 +21,7 @@
 namespace py = pybind11;
 
 #include <cstdint>
+// #include <iostream>
 #include <vector>
 
 #include <geogram/api/defs.h>
@@ -99,19 +100,23 @@ template <typename T> GEO::vector<T> array_to_geo_vector(py::array_t<T> array) {
 std::pair<std::vector<std::array<float, 3>>, std::vector<std::array<int, 4>>>
 tetrahedralize(GEO::vector<double> &vertices, GEO::vector<geo_index_t> &faces,
                bool optimize, bool skip_simplify, float scale_fac,
-               float epsilon, float stop_energy, bool coarsen, int _num_threads,
+               float epsilon, float stop_energy, bool coarsen, int num_threads,
                int loglevel, bool quiet) {
   using namespace floatTetWild;
   using namespace Eigen;
 
-  std::cout << "Starting tetrahedralization..." << std::endl;
+  if (!quiet) {
+    std::cout << "Starting tetrahedralization..." << std::endl;
+  }
 
   // Initialize placeholders for flags and epsr_flags, if needed
   std::vector<int> flags;
 
   // Initialize GEO::Mesh and load the mesh data into it
   GEO::Mesh sf_mesh;
-  std::cout << "Loading mesh..." << std::endl;
+  if (!quiet) {
+    std::cout << "Loading mesh..." << std::endl;
+  }
 
   sf_mesh.facets.assign_triangle_mesh(3, vertices, faces, false);
   if (sf_mesh.cells.nb() != 0 && sf_mesh.facets.nb() == 0) {
@@ -157,13 +162,30 @@ tetrahedralize(GEO::vector<double> &vertices, GEO::vector<geo_index_t> &faces,
   // params.ideal_edge_length_rel = edge_length_r;
   params.stop_energy = stop_energy;
   params.coarsen = coarsen;
+  params.is_quiet = quiet;
 
+  floatTetWild::Logger::init(!params.is_quiet, params.log_path);
+  params.log_level = loglevel;
+  spdlog::set_level(static_cast<spdlog::level::level_enum>(params.log_level));
+  spdlog::flush_every(std::chrono::seconds(3));
+
+  // Set up threading
+  if (num_threads == 0) {
+    num_threads = std::thread::hardware_concurrency();
+  }
+  // IGL has issues with a nested for loop and oversubscription, see
+  // https://github.com/libigl/libigl/issues/2412
+  igl::default_num_threads(std::ceil(std::sqrt(num_threads)));
+  params.num_threads = num_threads;
   const size_t MB = 1024 * 1024;
   const size_t stack_size = 64 * MB;
-  unsigned int max_threads = std::numeric_limits<unsigned int>::max();
-  unsigned int num_threads = std::max(1u, std::thread::hardware_concurrency());
-  num_threads = std::min(max_threads, num_threads);
-  params.num_threads = num_threads;
+  if (!quiet) {
+    std::cout << "TBB threads " << num_threads << std::endl;
+  }
+  tbb::global_control parallelism_limit(
+      tbb::global_control::max_allowed_parallelism, num_threads);
+  tbb::global_control stack_size_limit(tbb::global_control::thread_stack_size,
+                                       stack_size);
 
   std::vector<int> input_tags;
   if (input_tags.size() != input_faces.size()) {
@@ -176,10 +198,14 @@ tetrahedralize(GEO::vector<double> &vertices, GEO::vector<geo_index_t> &faces,
 
   // Perform tetrahedralization
   std::vector<bool> is_face_inserted(input_faces.size(), false);
-  std::cout << "Starting tetrahedralization..." << std::endl;
+  if (!quiet) {
+    std::cout << "Starting tetrahedralization..." << std::endl;
+  }
   FloatTetDelaunay::tetrahedralize(input_points, input_faces, tree, mesh,
                                    is_face_inserted);
-  std::cout << "Tetrahedralization performed." << std::endl;
+  if (!quiet) {
+    std::cout << "Tetrahedralization performed." << std::endl;
+  }
 
   insert_triangles(input_points, input_faces, input_tags, mesh,
                    is_face_inserted, tree, false);
@@ -207,9 +233,10 @@ tetrahedralize(GEO::vector<double> &vertices, GEO::vector<geo_index_t> &faces,
     }
   }
 
-  std::cout << "Tetrahedralization completed. Extracting mesh data..."
-            << std::endl;
-
+  if (!quiet) {
+    std::cout << "Tetrahedralization completed. Extracting mesh data..."
+              << std::endl;
+  }
   return extractMeshData(mesh);
 }
 
@@ -222,11 +249,16 @@ PYBIND11_MODULE(PyfTetWildWrapper, m) {
          bool optimize, bool skip_simplify, float edge_length_r, float epsilon,
          float stop_energy, bool coarsen, int num_threads, int loglevel,
          bool quiet) {
-        // GEO::Logger* geo_logger = GEO::Logger::instance();
-        // geo_logger-->initialize();
         GEO::initialize();
 
-        py::print("Starting tetrahedralization process...");
+        if (quiet) {
+          std::streambuf *orig_buf = std::cout.rdbuf();
+          std::cout.rdbuf(NULL);
+        }
+
+        if (!quiet) {
+          py::print("Starting tetrahedralization process...");
+        }
 
         // Convert numpy arrays to vectors and call the tetrahedralization
         // function
