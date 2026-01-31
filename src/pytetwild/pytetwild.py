@@ -229,7 +229,8 @@ def tetrahedralize(
         The faces of the mesh.
     edge_length_fac : float, default: 0.05
         Tetrahedral edge length as a function of bounding box diagonal. The
-        default ideal edge length is bb/20 (bounding box divided by 20).
+        default ideal edge length is bb/20 (bounding box divided by
+        20). Ignored when ``edge_length_abs`` is input.
     edge_length_abs : float, optional
         Absolute ideal edge length. When input ``edge_length_fac`` is ignored.
     optimize : bool
