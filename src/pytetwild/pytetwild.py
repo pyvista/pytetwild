@@ -100,7 +100,7 @@ def tetrahedralize_pv(
     num_threads: int = 0,
     num_opt_iter: int = 80,
     loglevel: int = 3,
-    quiet: bool = False,
+    quiet: bool = True,
 ) -> "pv.UnstructuredGrid":
     """
     Convert a PyVista surface mesh to a PyVista unstructured grid.
@@ -180,13 +180,19 @@ def tetrahedralize_pv(
     if edge_length_abs is None:
         edge_length_abs = 0.0
 
-    vertices = mesh.points
+    vertices = mesh.points.astype(np.float64, copy=False)
     faces = mesh._connectivity_array.reshape(-1, 3)
+    if faces.dtype == np.int32:
+        # we can cheat here and just treat it as unsigned 32 (assuming no negative indices)
+        faces_unsigned = faces.view(np.uint32)
+    else:
+        faces_unsigned = faces.astype(np.uint32, copy=False)
+
     skip_simplify = not simplify
     vtk_ordering = True
     tmesh_v, tmesh_c = PyfTetWildWrapper.tetrahedralize_mesh(
         vertices,
-        faces,
+        faces_unsigned,
         optimize,
         skip_simplify,
         edge_length_fac,
@@ -216,7 +222,7 @@ def tetrahedralize(
     num_threads: int = 0,
     num_opt_iter: int = 80,
     loglevel: int = 3,
-    quiet: bool = False,
+    quiet: bool = True,
     vtk_ordering: bool = False,
 ) -> tuple[NDArray[np.float64], NDArray[np.int32]]:
     """

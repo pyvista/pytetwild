@@ -42,8 +42,7 @@ using floatTetWild::Vector3;
 using floatTetWild::Vector3i;
 
 // Convert a tetwild mesh to numpy vertex and int arrays
-std::pair<NDArray<double, 2>, NDArray<int, 2>>
-extractMeshDataNumpy(const floatTetWild::Mesh &mesh, bool vtk_ordering) {
+nb::tuple extractMeshDataNumpy(const floatTetWild::Mesh &mesh, bool vtk_ordering) {
     std::map<int, int> old2new;
     int nv = 0;
     for (int i = 0; i < mesh.tet_vertices.size(); ++i) {
@@ -59,7 +58,7 @@ extractMeshDataNumpy(const floatTetWild::Mesh &mesh, bool vtk_ordering) {
 
     // make numpy arrays and accessors
     NDArray<double, 2> V = MakeNDArray<double, 2>({nv, 3});
-    NDArray<int, 2> T = MakeNDArray<int, 2>({nt, 3});
+    NDArray<int, 2> T = MakeNDArray<int, 2>({nt, 4});
     double *v = V.data();
     int *t = T.data();
 
@@ -69,7 +68,7 @@ extractMeshDataNumpy(const floatTetWild::Mesh &mesh, bool vtk_ordering) {
             continue;
         v[vi * 3 + 0] = vert.pos.x();
         v[vi * 3 + 1] = vert.pos.y();
-        v[vi * 3 + 1] = vert.pos.z();
+        v[vi * 3 + 2] = vert.pos.z();
         ++vi;
     }
 
@@ -97,7 +96,7 @@ extractMeshDataNumpy(const floatTetWild::Mesh &mesh, bool vtk_ordering) {
         }
     }
 
-    return {V, T};
+    return nb::make_tuple(V, T);
 }
 
 // convert a numpy array to a geogram vector
@@ -110,7 +109,7 @@ template <typename T> GEO::vector<T> array_to_geo_vector(NDArray<T, 2> array) {
 
     // if above unstable, simply loop
     // T *data = array.data();
-    // Populate the GEO::vector<T> with elements from the array.
+    // // Populate the GEO::vector<T> with elements from the array.
     // for (size_t i = 0; i < sz; ++i) {
     //     geo_vec.data()[i] = data[i];
     // }
@@ -118,7 +117,7 @@ template <typename T> GEO::vector<T> array_to_geo_vector(NDArray<T, 2> array) {
     return geo_vec;
 }
 
-std::pair<NDArray<double, 2>, NDArray<int, 2>> Tetrahedralize(
+nb::tuple Tetrahedralize(
     NDArray<double, 2> vertices_arr,
     NDArray<unsigned int, 2> faces_arr,
     bool optimize,
@@ -135,6 +134,7 @@ std::pair<NDArray<double, 2>, NDArray<int, 2>> Tetrahedralize(
     bool vtk_ordering) {
     using namespace floatTetWild;
     using namespace Eigen;
+    GEO::initialize();
 
     if (quiet) {
         std::streambuf *orig_buf = std::cout.rdbuf();
@@ -281,6 +281,7 @@ std::pair<NDArray<double, 2>, NDArray<int, 2>> Tetrahedralize(
     if (!quiet) {
         std::cout << "Tetrahedralization completed. Extracting mesh data..." << std::endl;
     }
+
     return extractMeshDataNumpy(mesh, vtk_ordering);
 }
 
@@ -415,9 +416,9 @@ nb::tuple TetrahedralizeCSG(
     std::cout << "boolean operation finished " << std::endl;
 
     // Extract data
-    auto result = extractMeshDataNumpy(mesh, vtk_ordering);
-    auto np_vertices = result.first;
-    auto np_cells = result.second;
+    nb::tuple result = extractMeshDataNumpy(mesh, vtk_ordering);
+    NDArray<double, 2> np_vertices = nb::cast<NDArray<double, 2>>(result[0]);
+    NDArray<int, 2> np_cells = nb::cast<NDArray<int, 2>>(result[1]);
 
     // Extract marker
     std::vector<int> marker;

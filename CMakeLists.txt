@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.15...3.26)
 project(fTetWildWrapper_project LANGUAGES CXX)
 
-find_package(Python 3.8
+find_package(Python 3.10
   REQUIRED COMPONENTS Interpreter Development.Module
   OPTIONAL_COMPONENTS Development.SABIModule)
 find_package(nanobind CONFIG REQUIRED)
@@ -20,16 +20,8 @@ set(fTetWild_DIR "${CMAKE_CURRENT_SOURCE_DIR}/src/fTetWild")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3")
 set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} -O3")
 
-# # Add the pybind11 submodule
-# set(PYBIND11_NEWPYTHON ON)
-# set(pybind11_DIR "${CMAKE_CURRENT_SOURCE_DIR}/src/pybind11")
-# add_subdirectory(${pybind11_DIR})
-
-
 # Include the fTetWild project as a subdirectory
 add_subdirectory(${fTetWild_DIR} EXCLUDE_FROM_ALL)
-
-# pybind11_add_module(PyfTetWildWrapper MODULE "${CMAKE_CURRENT_SOURCE_DIR}/src/FTetWildWrapper.cpp")
 
 nanobind_add_module(
   # name of the extension
@@ -51,6 +43,7 @@ target_include_directories(PyfTetWildWrapper PUBLIC ${fTetWild_DIR}/src)
 target_link_libraries(PyfTetWildWrapper PRIVATE FloatTetwild)
 target_compile_features(PyfTetWildWrapper PUBLIC cxx_std_11)
 
+# still necessary?
 if(WIN32)
     set_target_properties(PyfTetWildWrapper PROPERTIES SUFFIX ".pyd")
     foreach(OUTPUTCONFIG ${CMAKE_CONFIGURATION_TYPES})

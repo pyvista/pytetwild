@@ -17,13 +17,17 @@ Python wrapper around the efficient C++ library for tetrahedral meshing provided
 Installation
 ************
 
-We have pre-built wheels for Python 3.8 - Python 3.12 for Windows and Linux x64.
+We have pre-built wheels for Python 3.10 - Python 3.14 for Windows, Linux, and macOS.
 
 The recommended way to install ``pytetwild`` is via PyPI:
 
 .. code:: sh
 
-   pip install pytetwild
+   pip install pytetwild[all]
+
+This installs ``pyvista`` by default, which you can use to tetrahedralize
+sufrace meshes from PyVista. Alternatively you can just install with ``pip
+install pytetwild`` for a lighter install.
 
 You can also clone the repository and install it from source, but since there's
 C++ involved, the build is a bit more complicated. See ``CONTRIBUTING.md`` for
@@ -33,7 +37,8 @@ more details.
 Usage
 *****
 
-To tetrahedralize a surface mesh from `PyVista <https://docs.pyvista.org>`_:
+To tetrahedralize a surface mesh from `PyVista <https://docs.pyvista.org>`_,
+you'll need to first install ``pyvista`` as it's not a dependency and then run:
 
 .. code:: py
 
@@ -49,7 +54,10 @@ To tetrahedralize a surface mesh from `PyVista <https://docs.pyvista.org>`_:
    tetrahedral_mesh = pytetwild.tetrahedralize_pv(surface_mesh, edge_length_fac=1)
 
    # Visualize the tetrahedral mesh in an "exploded" view
-   tetrahedral_mesh.explode(1).plot(show_edges=True)
+   tetrahedral_mesh.explode(0.5).plot(
+       show_edges=True, zoom=1.6, ssao=True, anti_aliasing="ssaa"
+   )
+
 
 .. image:: https://github.com/pyvista/pytetwild/raw/main/exploded-sphere.png
 
@@ -58,6 +66,7 @@ You can also work with raw arrays. Here's a simple cube that we turn into tetrah
 .. code:: py
 
    import numpy as np
+   import pytetwild
 
    # Define vertices of the cube
    vertices = np.array([
@@ -86,25 +95,49 @@ You can also work with raw arrays. Here's a simple cube that we turn into tetrah
 
 Usage - Options
 ---------------
-We've surfaced a handful of parameters to each of our interfaces
-``tetrahedralize`` and ``tetrahedralize_pv``. Here are the optional parameters.
+We've surfaced a several parameters to each of our interfaces
+``tetrahedralize`` and ``tetrahedralize_pv``:
 
 .. code::
 
-    Additional Parameters
-    ---------------------
+    Parameters
+    ----------
     edge_length_fac : float, default: 0.05
         Tetrahedral edge length as a function of bounding box diagonal. The
-        default ideal edge length is bb/20 (bounding box divided by 20).
-    optimize : bool
+        default ideal edge length is ``bb/20`` (bounding box divided by
+        20). Ignored when ``edge_length_abs`` is input.
+    edge_length_abs : float, optional
+        Absolute ideal edge length. When input ``edge_length_fac`` is ignored.
+    optimize : bool, default: True
         Improve the minimum scaled Jacobean for each cell. This leads to higher
-        cell quality at the expense of computation time.
+        cell quality at the expense of computation time. Optimization level is
+        dependent on ``stop_energy`` and ``num_opt_iter``.
+    simplify : bool, default: True
+        Simplfiy the input mesh surface before tetrahedralization.
+    epsilon : float, default 1e-3
+        Envelop size, specifying the maximum distance of the output surface
+        from the input surface, relative to the bounding box size.
+    stop_energy : float, default: 10.0
+        The mesh optimization stops when the conformal AMIPS energy reaches
+        ``stop_energy``.
+    coarsen : bool, default: False
+        Coarsen the output as much as possible, while maintaining the mesh
+        quality.
+    num_threads : int, default: 0
+        Set number of threads used. 0 (default) uses all available cores.
+    num_opt_iter : int, default: 80
+        Maximum number of optimization iterations if ``optimize=True``.
+    loglevel : int, default: 6
+        Set log level (0 = most verbose, 6 = minimal output).
+    quiet : bool, default: False
+        Disable all output. Overrides ``loglevel``.
+
 
 
 License and Acknowledgments
 ***************************
 
-This project relies on ``fTetWild`` and credits go to the original authors for
+This project relies on ``fTetWild`` and credit goes to the original authors for
 their efficient C++ library for tetrahedral meshing. That work is licensed
 under the Mozilla Public License v2.0.
 
