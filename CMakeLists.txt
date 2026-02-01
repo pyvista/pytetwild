@@ -20,11 +20,6 @@ nanobind_add_module(
 
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ./src/pytetwild)
 
-# if($ENV{USE_MAVX})
-#   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -mavx")
-#   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mavx")
-# endif()
-
 # Set the path to the fTetWild project
 set(fTetWild_DIR "${CMAKE_CURRENT_SOURCE_DIR}/src/fTetWild")
 
