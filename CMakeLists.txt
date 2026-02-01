@@ -28,11 +28,9 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ./src/pytetwild)
 # Set the path to the fTetWild project
 set(fTetWild_DIR "${CMAKE_CURRENT_SOURCE_DIR}/src/fTetWild")
 
-if(NOT APPLE)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3")
-    set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} -O3")
-endif()
-
+# Enable aggressive optimization
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3")
+set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} -O3")
 
 # Include the fTetWild project as a subdirectory
 add_subdirectory(${fTetWild_DIR} EXCLUDE_FROM_ALL)

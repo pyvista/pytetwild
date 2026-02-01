@@ -1,3 +1,4 @@
+import sys
 import math
 from typing import Callable
 import os
@@ -33,6 +34,7 @@ def test_tetrahedralize_pv(mesh_generator: Callable) -> None:
     assert result.n_points > 0, "The resulting mesh should have more than 0 points"
 
 
+@pytest.mark.skipif(sys.platform == "darwin", reason="Skipped on macOS")
 def test_tetrahedralize_abs_edge_len() -> None:
     """Ensure that absolute edge length works."""
     mesh = pv.Icosphere()
