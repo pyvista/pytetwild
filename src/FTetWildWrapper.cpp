@@ -41,6 +41,20 @@ using floatTetWild::json;
 using floatTetWild::Vector3;
 using floatTetWild::Vector3i;
 
+struct CoutRedirect {
+    std::streambuf *old = nullptr;
+    explicit CoutRedirect(bool enable) {
+        if (enable) {
+            old = std::cout.rdbuf();
+            std::cout.rdbuf(nullptr);
+        }
+    }
+    ~CoutRedirect() {
+        if (old)
+            std::cout.rdbuf(old);
+    }
+};
+
 // Convert a tetwild mesh to numpy vertex and int arrays
 nb::tuple extractMeshDataNumpy(const floatTetWild::Mesh &mesh, bool vtk_ordering) {
     std::map<int, int> old2new;
@@ -107,13 +121,6 @@ template <typename T> GEO::vector<T> array_to_geo_vector(NDArray<T, 2> array) {
     // numpy arrays are contiguous
     std::memcpy(geo_vec.data(), array.data(), sz * sizeof(T));
 
-    // if above unstable, simply loop
-    // T *data = array.data();
-    // // Populate the GEO::vector<T> with elements from the array.
-    // for (size_t i = 0; i < sz; ++i) {
-    //     geo_vec.data()[i] = data[i];
-    // }
-
     return geo_vec;
 }
 
@@ -135,13 +142,7 @@ nb::tuple Tetrahedralize(
     using namespace floatTetWild;
     using namespace Eigen;
     GEO::initialize();
-
-    // There's some std::cout used in floatTetWild that needs to be redirected
-    std::streambuf *orig_cout_buf;
-    if (quiet) {
-        orig_cout_buf = std::cout.rdbuf();
-        std::cout.rdbuf(NULL);
-    }
+    CoutRedirect cout_guard(quiet);
 
     if (!quiet) {
         std::cout << "Starting tetrahedralization..." << std::endl;
@@ -282,11 +283,6 @@ nb::tuple Tetrahedralize(
 
     if (!quiet) {
         std::cout << "Tetrahedralization completed. Extracting mesh data..." << std::endl;
-    }
-
-    // return stdout
-    if (orig_cout_buf) {
-        std::cout.rdbuf(orig_cout_buf);
     }
 
     return extractMeshDataNumpy(mesh, vtk_ordering);

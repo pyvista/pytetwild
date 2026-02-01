@@ -48,7 +48,7 @@ def test_tetrahedralize_abs_edge_len() -> None:
 def test_tetrahedralize_edge_length_fac() -> None:
     mesh = pv.Cube().triangulate()
     result = tetrahedralize_pv(mesh, num_opt_iter=5)  # default is 0.05
-    result_very_coarse = tetrahedralize_pv(mesh, edge_length_fac=0.1, num_opt_iter=5)
+    result_very_coarse = tetrahedralize_pv(mesh, edge_length_fac=0.1, num_opt_iter=5, quiet=True)
     assert result_very_coarse.n_cells < result.n_cells
 
     # invalid edge length
