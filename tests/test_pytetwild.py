@@ -1,5 +1,9 @@
+import sys
+import math
+from typing import Callable
 import os
 import numpy as np
+from numpy.typing import NDArray
 import pyvista as pv
 import vtk
 from scipy.spatial import KDTree
@@ -20,9 +24,9 @@ def default_test_data():
 
 # Parameterized test for tetrahedralize_pv function
 @pytest.mark.parametrize("mesh_generator", [pv.Icosphere, pv.examples.download_bunny_coarse])
-def test_tetrahedralize_pv(mesh_generator):
+def test_tetrahedralize_pv(mesh_generator: Callable) -> None:
     mesh = mesh_generator()
-    result = tetrahedralize_pv(mesh, edge_length_fac=0.5)
+    result = tetrahedralize_pv(mesh, edge_length_fac=0.1, num_opt_iter=5)
     assert isinstance(result, pv.UnstructuredGrid), (
         "The result should be a PyVista UnstructuredGrid"
     )
@@ -30,33 +34,48 @@ def test_tetrahedralize_pv(mesh_generator):
     assert result.n_points > 0, "The resulting mesh should have more than 0 points"
 
 
-def test_tetrahedralize_edge_length():
+def test_tetrahedralize_abs_edge_len() -> None:
+    """Ensure that absolute edge length works."""
+    mesh = pv.Icosphere()
+    for edge_len_tgt in [0.2, 0.15, 0.1]:
+        ugrid = tetrahedralize_pv(mesh, edge_length_abs=edge_len_tgt, quiet=True, num_opt_iter=5)
+
+        edge_len = ugrid.extract_all_edges().compute_cell_sizes()["Length"]
+        mean_edge_len = edge_len.mean()
+        assert np.allclose(edge_len_tgt, mean_edge_len, rtol=0.2)
+
+
+def test_tetrahedralize_edge_length_fac() -> None:
     mesh = pv.Cube().triangulate()
-    result = tetrahedralize_pv(mesh)
-    result_very_coarse = tetrahedralize_pv(mesh, edge_length_fac=1.0)
+    result = tetrahedralize_pv(mesh, num_opt_iter=5)  # default is 0.05
+    result_very_coarse = tetrahedralize_pv(mesh, edge_length_fac=0.1, num_opt_iter=5)
     assert result_very_coarse.n_cells < result.n_cells
+
+    # invalid edge length
     with pytest.raises(ValueError):
         tetrahedralize_pv(mesh, edge_length_fac=0.0)
 
 
-def test_tetrahedralize_pv_opt():
+def test_tetrahedralize_pv_opt() -> None:
     mesh = pv.Sphere(phi_resolution=10, theta_resolution=10)
-    grid = tetrahedralize_pv(mesh, optimize=True)
-    qual_mean = np.mean(-grid.compute_cell_quality()["CellQuality"])
+    grid = tetrahedralize_pv(mesh, optimize=True, num_opt_iter=5)
+    qual_mean = np.mean(grid.cell_quality()["scaled_jacobian"])
 
     grid_no_opt = tetrahedralize_pv(mesh, optimize=False)
-    qual_mean_no_opt = np.mean(-grid_no_opt.compute_cell_quality()["CellQuality"])
+    qual_mean_no_opt = np.mean(grid_no_opt.cell_quality()["scaled_jacobian"])
     assert qual_mean > qual_mean_no_opt
 
 
 # Parameterized test for tetrahedralize function
 @pytest.mark.parametrize("mesh_generator", [pv.Icosphere, pv.examples.download_bunny_coarse])
-def test_tetrahedralize(mesh_generator):
+def test_tetrahedralize(mesh_generator: Callable):
     mesh = mesh_generator()
     vertices = mesh.points
-    faces = mesh.faces.reshape((-1, 4))[:, 1:4]
+    faces = mesh._connectivity_array.reshape(-1, 3)
 
-    vertices_result, tetrahedra_result = tetrahedralize(vertices, faces, edge_length_fac=0.5)
+    vertices_result, tetrahedra_result = tetrahedralize(
+        vertices, faces, edge_length_fac=0.1, num_opt_iter=5
+    )
     assert isinstance(vertices_result, np.ndarray), "The vertices result should be a numpy array"
     assert isinstance(tetrahedra_result, np.ndarray), (
         "The tetrahedra result should be a numpy array"
@@ -65,7 +84,7 @@ def test_tetrahedralize(mesh_generator):
     assert len(tetrahedra_result) > 0, "There should be more than 0 tetrahedra in the result"
 
 
-def _sample_points_vtk(mesh_pv, dist_btw_pts=0.01):
+def _sample_points_vtk(mesh_pv: pv.PolyData, dist_btw_pts: float = 0.01) -> NDArray[np.float64]:
     point_sampler = vtk.vtkPolyDataPointSampler()
     point_sampler.SetInputData(mesh_pv)
     point_sampler.SetDistance(dist_btw_pts)
@@ -75,7 +94,9 @@ def _sample_points_vtk(mesh_pv, dist_btw_pts=0.01):
     return points_sampled
 
 
-def _symmetric_surf_dist(pts0, pts1):
+def _symmetric_surf_dist(
+    pts0: NDArray[np.float64], pts1: NDArray[np.float64]
+) -> NDArray[np.float64]:
     d_kdtree0, _ = KDTree(pts0).query(pts1)
     d_kdtree1, _ = KDTree(pts1).query(pts0)
     return (np.mean(d_kdtree0) + np.mean(d_kdtree1)) / 2
@@ -84,9 +105,9 @@ def _symmetric_surf_dist(pts0, pts1):
 @pytest.mark.parametrize(
     "mesh_generator", [pv.Icosphere]
 )  # pv.examples.download_bunny_coarse is not closed, so select_enclosed_points fails
-def test_output_points_enclosed(mesh_generator):
+def test_output_points_enclosed(mesh_generator: Callable) -> None:
     input_pv = mesh_generator()
-    py_output_pv = tetrahedralize_pv(input_pv, edge_length_fac=0.1)
+    py_output_pv = tetrahedralize_pv(input_pv, edge_length_fac=0.1, num_opt_iter=5)
     additional_input_scaling = 0.01
     enclosed_pv = py_output_pv.select_enclosed_points(input_pv.scale(1 + additional_input_scaling))
     enclosed_ratio = enclosed_pv.point_data["SelectedPoints"].sum() / input_pv.points.shape[0]
@@ -95,17 +116,17 @@ def test_output_points_enclosed(mesh_generator):
     )
 
 
-def test_default_output_surf_dist(default_test_data):
+def test_default_output_surf_dist(default_test_data: dict[str, pv.PolyData]) -> None:
     input_pv = default_test_data["input"]
     output_pv = default_test_data["output"]
-    py_output_pv = tetrahedralize_pv(input_pv)
+    py_output_pv = tetrahedralize_pv(input_pv, num_opt_iter=5)
     pts0 = _sample_points_vtk(py_output_pv.extract_surface())
     pts1 = _sample_points_vtk(output_pv.extract_surface())
     surf_dist = _symmetric_surf_dist(pts0, pts1)
     assert surf_dist < 1e-2, "surfs of outputs from c++/py should be similar"
 
 
-def test_csg():
+def test_csg() -> None:
     csgtree = {
         "operation": "union",
         "right": os.path.join(THIS_PATH, "test_data/sphere.stl"),

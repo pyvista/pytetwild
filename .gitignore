@@ -77,6 +77,21 @@ Release/
 mpir.dll
 _deps
 appleclang*
+gnu_14.3_cxx17_64_release/
+src/GPATH
+src/GRTAGS
+src/GTAGS
+.clangd
+libnanobind-static-abi3.a
 
 # cibuildwheel
 wheelhouse
+
+# test and temp files
+tests/test_data/csgtree.json
+__b_vs.xyz
+__cutting.stl
+__opt.stl
+
+# nixos
+shell.nix

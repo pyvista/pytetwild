@@ -54,9 +54,7 @@ repos:
   - id: mypy
     exclude: ^(docs/|tests)
     additional_dependencies: [
-    "mypy-extensions==1.0.0",
     "toml==0.10.2",
-    "npt_promote",
     "numpy",
   ]
 
