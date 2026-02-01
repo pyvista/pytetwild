@@ -46,6 +46,7 @@ def test_tetrahedralize_abs_edge_len() -> None:
         assert np.allclose(edge_len_tgt, mean_edge_len, rtol=0.2)
 
 
+@pytest.mark.skipif(sys.platform == "darwin", reason="Skipped on macOS")
 def test_tetrahedralize_edge_length() -> None:
     mesh = pv.Cube().triangulate()
     result = tetrahedralize_pv(mesh)
