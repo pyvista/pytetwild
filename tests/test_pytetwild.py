@@ -26,7 +26,7 @@ def default_test_data():
 @pytest.mark.parametrize("mesh_generator", [pv.Icosphere, pv.examples.download_bunny_coarse])
 def test_tetrahedralize_pv(mesh_generator: Callable) -> None:
     mesh = mesh_generator()
-    result = tetrahedralize_pv(mesh, edge_length_fac=0.5, num_opt_iter=5)
+    result = tetrahedralize_pv(mesh, edge_length_fac=0.1, num_opt_iter=5)
     assert isinstance(result, pv.UnstructuredGrid), (
         "The result should be a PyVista UnstructuredGrid"
     )
@@ -45,12 +45,13 @@ def test_tetrahedralize_abs_edge_len() -> None:
         assert np.allclose(edge_len_tgt, mean_edge_len, rtol=0.2)
 
 
-@pytest.mark.skipif(sys.platform == "darwin", reason="Skipped on macOS")
-def test_tetrahedralize_edge_length() -> None:
+def test_tetrahedralize_edge_length_fac() -> None:
     mesh = pv.Cube().triangulate()
-    result = tetrahedralize_pv(mesh)
-    result_very_coarse = tetrahedralize_pv(mesh, edge_length_fac=1.0, num_opt_iter=5)
+    result = tetrahedralize_pv(mesh, num_opt_iter=5)  # default is 0.05
+    result_very_coarse = tetrahedralize_pv(mesh, edge_length_fac=0.1, num_opt_iter=5)
     assert result_very_coarse.n_cells < result.n_cells
+
+    # invalid edge length
     with pytest.raises(ValueError):
         tetrahedralize_pv(mesh, edge_length_fac=0.0)
 
@@ -73,7 +74,7 @@ def test_tetrahedralize(mesh_generator: Callable):
     faces = mesh._connectivity_array.reshape(-1, 3)
 
     vertices_result, tetrahedra_result = tetrahedralize(
-        vertices, faces, edge_length_fac=0.5, num_opt_iter=5
+        vertices, faces, edge_length_fac=0.1, num_opt_iter=5
     )
     assert isinstance(vertices_result, np.ndarray), "The vertices result should be a numpy array"
     assert isinstance(tetrahedra_result, np.ndarray), (
