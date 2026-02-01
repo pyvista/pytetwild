@@ -34,12 +34,11 @@ def test_tetrahedralize_pv(mesh_generator: Callable) -> None:
     assert result.n_points > 0, "The resulting mesh should have more than 0 points"
 
 
-@pytest.mark.skipif(sys.platform == "darwin", reason="Skipped on macOS")
 def test_tetrahedralize_abs_edge_len() -> None:
     """Ensure that absolute edge length works."""
     mesh = pv.Icosphere()
     for edge_len_tgt in [0.2, 0.15, 0.1]:
-        ugrid = tetrahedralize_pv(mesh, edge_length_abs=edge_len_tgt, quiet=True)
+        ugrid = tetrahedralize_pv(mesh, edge_length_abs=edge_len_tgt, quiet=True, num_opt_iter=5)
 
         edge_len = ugrid.extract_all_edges().compute_cell_sizes()["Length"]
         mean_edge_len = edge_len.mean()
@@ -50,7 +49,7 @@ def test_tetrahedralize_abs_edge_len() -> None:
 def test_tetrahedralize_edge_length() -> None:
     mesh = pv.Cube().triangulate()
     result = tetrahedralize_pv(mesh)
-    result_very_coarse = tetrahedralize_pv(mesh, edge_length_fac=1.0)
+    result_very_coarse = tetrahedralize_pv(mesh, edge_length_fac=1.0, num_opt_iter=5)
     assert result_very_coarse.n_cells < result.n_cells
     with pytest.raises(ValueError):
         tetrahedralize_pv(mesh, edge_length_fac=0.0)
@@ -58,7 +57,7 @@ def test_tetrahedralize_edge_length() -> None:
 
 def test_tetrahedralize_pv_opt() -> None:
     mesh = pv.Sphere(phi_resolution=10, theta_resolution=10)
-    grid = tetrahedralize_pv(mesh, optimize=True)
+    grid = tetrahedralize_pv(mesh, optimize=True, num_opt_iter=5)
     qual_mean = np.mean(grid.cell_quality()["scaled_jacobian"])
 
     grid_no_opt = tetrahedralize_pv(mesh, optimize=False)
@@ -73,7 +72,9 @@ def test_tetrahedralize(mesh_generator: Callable):
     vertices = mesh.points
     faces = mesh._connectivity_array.reshape(-1, 3)
 
-    vertices_result, tetrahedra_result = tetrahedralize(vertices, faces, edge_length_fac=0.5)
+    vertices_result, tetrahedra_result = tetrahedralize(
+        vertices, faces, edge_length_fac=0.5, num_opt_iter=5
+    )
     assert isinstance(vertices_result, np.ndarray), "The vertices result should be a numpy array"
     assert isinstance(tetrahedra_result, np.ndarray), (
         "The tetrahedra result should be a numpy array"
@@ -105,7 +106,7 @@ def _symmetric_surf_dist(
 )  # pv.examples.download_bunny_coarse is not closed, so select_enclosed_points fails
 def test_output_points_enclosed(mesh_generator: Callable) -> None:
     input_pv = mesh_generator()
-    py_output_pv = tetrahedralize_pv(input_pv, edge_length_fac=0.1)
+    py_output_pv = tetrahedralize_pv(input_pv, edge_length_fac=0.1, num_opt_iter=5)
     additional_input_scaling = 0.01
     enclosed_pv = py_output_pv.select_enclosed_points(input_pv.scale(1 + additional_input_scaling))
     enclosed_ratio = enclosed_pv.point_data["SelectedPoints"].sum() / input_pv.points.shape[0]
@@ -117,7 +118,7 @@ def test_output_points_enclosed(mesh_generator: Callable) -> None:
 def test_default_output_surf_dist(default_test_data: dict[str, pv.PolyData]) -> None:
     input_pv = default_test_data["input"]
     output_pv = default_test_data["output"]
-    py_output_pv = tetrahedralize_pv(input_pv)
+    py_output_pv = tetrahedralize_pv(input_pv, num_opt_iter=5)
     pts0 = _sample_points_vtk(py_output_pv.extract_surface())
     pts1 = _sample_points_vtk(output_pv.extract_surface())
     surf_dist = _symmetric_surf_dist(pts0, pts1)

@@ -136,9 +136,10 @@ nb::tuple Tetrahedralize(
     using namespace Eigen;
     GEO::initialize();
 
-    std::streambuf *cout_buf = nullptr;
+    // There's some std::cout used in floatTetWild that needs to be redirected
+    std::streambuf *orig_cout_buf;
     if (quiet) {
-        *cout_buf = std::cout.rdbuf();
+        orig_cout_buf = std::cout.rdbuf();
         std::cout.rdbuf(NULL);
     }
 
@@ -283,9 +284,9 @@ nb::tuple Tetrahedralize(
         std::cout << "Tetrahedralization completed. Extracting mesh data..." << std::endl;
     }
 
-    if (cout_buf) {
-        // return stdout
-        std::cout.rdbuf(cout_buf);
+    // return stdout
+    if (orig_cout_buf) {
+        std::cout.rdbuf(orig_cout_buf);
     }
 
     return extractMeshDataNumpy(mesh, vtk_ordering);
