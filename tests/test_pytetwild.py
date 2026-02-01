@@ -26,7 +26,7 @@ def default_test_data():
 @pytest.mark.parametrize("mesh_generator", [pv.Icosphere, pv.examples.download_bunny_coarse])
 def test_tetrahedralize_pv(mesh_generator: Callable) -> None:
     mesh = mesh_generator()
-    result = tetrahedralize_pv(mesh, edge_length_fac=0.5)
+    result = tetrahedralize_pv(mesh, edge_length_fac=0.5, num_opt_iter=5)
     assert isinstance(result, pv.UnstructuredGrid), (
         "The result should be a PyVista UnstructuredGrid"
     )

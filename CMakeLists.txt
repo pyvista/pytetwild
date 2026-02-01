@@ -54,4 +54,4 @@ if(WIN32)
     endforeach()
 endif()
 
-install(TARGETS PyfTetWildWrapper LIBRARY DESTINATION ./pytetwild)
+install(TARGETS PyfTetWildWrapper LIBRARY DESTINATION pytetwild)

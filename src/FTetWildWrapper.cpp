@@ -136,8 +136,9 @@ nb::tuple Tetrahedralize(
     using namespace Eigen;
     GEO::initialize();
 
+    std::streambuf *cout_buf = nullptr;
     if (quiet) {
-        std::streambuf *orig_buf = std::cout.rdbuf();
+        *cout_buf = std::cout.rdbuf();
         std::cout.rdbuf(NULL);
     }
 
@@ -280,6 +281,11 @@ nb::tuple Tetrahedralize(
 
     if (!quiet) {
         std::cout << "Tetrahedralization completed. Extracting mesh data..." << std::endl;
+    }
+
+    if (cout_buf) {
+        // return stdout
+        std::cout.rdbuf(cout_buf);
     }
 
     return extractMeshDataNumpy(mesh, vtk_ordering);
