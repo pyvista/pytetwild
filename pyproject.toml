@@ -61,9 +61,9 @@ test-requires = "pytest pyvista scipy meshio"
 test-command = "pytest {project}/tests -v"
 
 [tool.cibuildwheel.linux]
-manylinux-x86_64-image = "manylinux_2_28"
-before-all = "dnf install -y gmp-devel"
-before-build = "pip install abi3audit cmake==3.29.0"
+manylinux-x86_64-image = "manylinux2014"
+before-all = "yum install -y gmp-devel"
+before-build = "pip install abi3audit cmake"
 repair-wheel-command = [
   "auditwheel repair -w {dest_dir} {wheel}",
   "bash tools/audit_wheel.sh {wheel}"
