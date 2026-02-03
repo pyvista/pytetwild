@@ -34,7 +34,7 @@ pytetwild = ["py.typed"]
 
 [project.optional-dependencies]
 all = ['pyvista']
-tests = ["pytest", "pyvista", "scipy", "meshio"]
+tests = ["pytest", "pyvista", "scipy<1.17.0", "meshio"]
 dev = ["pre-commit"]
 
 [tool.scikit-build]
