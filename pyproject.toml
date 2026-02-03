@@ -4,7 +4,7 @@ requires = ["scikit-build-core >=0.4.3", "nanobind >=1.3.2"]
 
 [project]
 name = "pytetwild"
-version = "0.2.1"
+version = "0.2.2"
 description = "Python wrapper of fTetWild"
 readme = { file = "README.rst", content-type = "text/x-rst" }
 authors = [{ name = "Alex Kaszynski", email = "akascap@gmail.com" }]
