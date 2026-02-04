@@ -100,8 +100,8 @@ def tetrahedralize_pv(
     num_threads: int = 0,
     num_opt_iter: int = 80,
     loglevel: int = 3,
-    disable_filtering: bool = False,
     quiet: bool = True,
+    disable_filtering: bool = False,
 ) -> "pv.UnstructuredGrid":
     """
     Convert a PyVista surface mesh to a PyVista unstructured grid.
@@ -273,6 +273,7 @@ def tetrahedralize(
     disable_filtering : bool, default: False
         Disable the filtering of the resulting mesh, and thus keep
         fTetWilds background mesh.
+
     Returns
     -------
     Tuple[np.ndarray, np.ndarray]
