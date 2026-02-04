@@ -138,7 +138,8 @@ nb::tuple Tetrahedralize(
     int num_opt_iter,
     int loglevel,
     bool quiet,
-    bool vtk_ordering) {
+    bool vtk_ordering,
+    bool disable_filtering) {
     using namespace floatTetWild;
     using namespace Eigen;
     GEO::initialize();
@@ -203,6 +204,7 @@ nb::tuple Tetrahedralize(
     params.coarsen = coarsen;
     params.is_quiet = quiet;
     params.max_its = num_opt_iter;
+    params.disable_filtering = disable_filtering;
 
     if (!params.init(tree.get_sf_diag())) {
         throw std::runtime_error("FTetWildWrapper.cpp: Parameters initialization failed");

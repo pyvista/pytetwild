@@ -154,3 +154,17 @@ def test_csg() -> None:
 
     assert np.isclose(exactspherevol, spherevol, rtol=0.02)
     assert np.isclose(exactboxvol, boxvol, rtol=0.02)
+
+
+def test_disable_filtering() -> None:
+    # test that the volume of a Unitbox is 1, and larger than 1.1 if the background is kept
+
+    box = pv.Box(bounds=(0, 1, 0, 1, 0, 1)).triangulate()
+    mesh_with_background = tetrahedralize_pv(box, disable_filtering=True)
+    mesh_wo_background = tetrahedralize_pv(box, disable_filtering=False)
+
+    vol_with_background = abs(mesh_with_background.compute_cell_sizes()["Volume"]).sum()
+    vol_wo_background = abs(mesh_wo_background.compute_cell_sizes()["Volume"]).sum()
+
+    assert np.isclose(vol_wo_background, 1.0, rtol=0.01)
+    assert vol_with_background > 1.1

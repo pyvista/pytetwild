@@ -101,6 +101,7 @@ def tetrahedralize_pv(
     num_opt_iter: int = 80,
     loglevel: int = 3,
     quiet: bool = True,
+    disable_filtering: bool = False,
 ) -> "pv.UnstructuredGrid":
     """
     Convert a PyVista surface mesh to a PyVista unstructured grid.
@@ -138,6 +139,9 @@ def tetrahedralize_pv(
         Set log level (0 = most verbose, 6 = minimal output).
     quiet : bool, default: False
         Disable all output. Overrides ``loglevel``.
+    disable_filtering : bool, default: False
+        Disable the filtering of the resulting mesh, and thus keep
+        fTetWilds background mesh.
 
     Returns
     -------
@@ -205,6 +209,7 @@ def tetrahedralize_pv(
         loglevel,
         quiet,
         vtk_ordering,
+        disable_filtering,
     )
     return _ugrid_from_regular_cells(tmesh_v, tmesh_c)
 
@@ -224,6 +229,7 @@ def tetrahedralize(
     loglevel: int = 3,
     quiet: bool = True,
     vtk_ordering: bool = False,
+    disable_filtering: bool = False,
 ) -> tuple[NDArray[np.float64], NDArray[np.int32]]:
     """
     Convert mesh vertices and faces to a tetrahedral mesh.
@@ -264,6 +270,9 @@ def tetrahedralize(
         Disable all output. Overrides ``loglevel``.
     vtk_ordering : bool, default: False
         Reorder the tetrahedral cell indices to match VTK's ordering.
+    disable_filtering : bool, default: False
+        Disable the filtering of the resulting mesh, and thus keep
+        fTetWilds background mesh.
 
     Returns
     -------
@@ -301,6 +310,7 @@ def tetrahedralize(
         loglevel,
         quiet,
         vtk_ordering,
+        disable_filtering,
     )
 
 
