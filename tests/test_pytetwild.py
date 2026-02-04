@@ -166,7 +166,5 @@ def test_disable_filtering() -> None:
     vol_with_background = abs(mesh_with_background.compute_cell_sizes()["Volume"]).sum()
     vol_wo_background = abs(mesh_wo_background.compute_cell_sizes()["Volume"]).sum()
 
-    print(vol_wo_background)
-    print(vol_with_background)
     assert np.isclose(vol_wo_background, 1.0, rtol=0.01)
     assert vol_with_background > 1.1
