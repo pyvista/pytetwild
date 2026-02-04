@@ -142,7 +142,7 @@ def tetrahedralize_pv(
     disable_filtering : bool, default: False
         Disable the filtering of the resulting mesh, and thus keep
         fTetWilds background mesh.
-        
+
     Returns
     -------
     pv.UnstructuredGrid
@@ -209,7 +209,7 @@ def tetrahedralize_pv(
         loglevel,
         quiet,
         vtk_ordering,
-        disable_filtering
+        disable_filtering,
     )
     return _ugrid_from_regular_cells(tmesh_v, tmesh_c)
 
@@ -229,8 +229,7 @@ def tetrahedralize(
     loglevel: int = 3,
     quiet: bool = True,
     vtk_ordering: bool = False,
-    disable_filtering: bool = False
-    
+    disable_filtering: bool = False,
 ) -> tuple[NDArray[np.float64], NDArray[np.int32]]:
     """
     Convert mesh vertices and faces to a tetrahedral mesh.
@@ -272,7 +271,7 @@ def tetrahedralize(
     vtk_ordering : bool, default: False
         Reorder the tetrahedral cell indices to match VTK's ordering.
     disable_filtering : bool, default: False
-        Disable the filtering of the resulting mesh, and thus keep 
+        Disable the filtering of the resulting mesh, and thus keep
         fTetWilds background mesh.
     Returns
     -------
@@ -310,7 +309,7 @@ def tetrahedralize(
         loglevel,
         quiet,
         vtk_ordering,
-        disable_filtering
+        disable_filtering,
     )
 
 

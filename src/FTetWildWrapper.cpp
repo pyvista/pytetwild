@@ -139,8 +139,7 @@ nb::tuple Tetrahedralize(
     int loglevel,
     bool quiet,
     bool vtk_ordering,
-    bool disable_filtering
-) {
+    bool disable_filtering) {
     using namespace floatTetWild;
     using namespace Eigen;
     GEO::initialize();
