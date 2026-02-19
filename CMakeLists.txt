@@ -4,6 +4,12 @@ project(fTetWildWrapper_project LANGUAGES CXX)
 find_package(Python 3.10
   REQUIRED COMPONENTS Interpreter Development.Module
   OPTIONAL_COMPONENTS Development.SABIModule)
+
+# Get nanobind cmake path through python
+execute_process(
+  COMMAND "${Python_EXECUTABLE}" -c "import nanobind; print(nanobind.cmake_dir())"
+  OUTPUT_STRIP_TRAILING_WHITESPACE OUTPUT_VARIABLE NB_DIR)
+list(APPEND CMAKE_PREFIX_PATH "${NB_DIR}")
 find_package(nanobind CONFIG REQUIRED)
 
 nanobind_add_module(
