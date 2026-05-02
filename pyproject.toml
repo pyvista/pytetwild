@@ -37,6 +37,11 @@ all = ['pyvista']
 tests = ["pytest", "pyvista", "scipy<1.17.0", "meshio"]
 dev = ["pre-commit"]
 
+[project.entry-points."pyvista.accessors"]
+# Value points at the plugin module; importing it runs the
+# ``@register_dataset_accessor`` decorator as a side effect.
+tetwild = "pytetwild._accessor"
+
 [tool.scikit-build]
 build-dir = "./build"
 editable.mode = "inplace"
