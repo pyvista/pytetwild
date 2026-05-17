@@ -34,7 +34,7 @@ pytetwild = ["py.typed"]
 
 [project.optional-dependencies]
 all = ['pyvista']
-tests = ["pytest", "pyvista", "scipy<1.17.0", "meshio"]
+tests = ["pytest", "pytest-timeout", "pyvista", "scipy<1.17.0", "meshio"]
 dev = ["pre-commit"]
 
 [project.entry-points."pyvista.accessors"]
@@ -56,6 +56,11 @@ args = [
 
 [tool.pytest.ini_options]
 testpaths = 'tests'
+# Bound any single test; a hung fTetWild call (or stalled network
+# fetch) dumps a traceback and fails instead of blocking until the
+# 6h CI ceiling. signal method can interrupt the C extension on POSIX.
+timeout = 300
+timeout_method = 'signal'
 
 [tool.cibuildwheel]
 archs = ["auto64"]  # 64-bit only
