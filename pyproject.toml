@@ -64,7 +64,9 @@ test-command = "pytest {project}/tests -v"
 manylinux-x86_64-image = "manylinux2014"
 manylinux-aarch64-image = "manylinux2014"
 before-all = "yum install -y gmp-devel"
-before-build = "pip install abi3audit cmake"
+# On aarch64, point fTetWild's vendored geogram at its aarch64
+# platform file; the default Linux64-gcc one injects x86-only -m64.
+before-build = "pip install abi3audit cmake && if [ $(uname -m) = aarch64 ]; then sed -i 's|VORPALINE_PLATFORM Linux64-gcc |VORPALINE_PLATFORM Linux64-gcc-aarch64 |' src/fTetWild/cmake/geogram.cmake; fi"
 repair-wheel-command = [
   "auditwheel repair -w {dest_dir} {wheel}",
   "bash tools/audit_wheel.sh {wheel}"
