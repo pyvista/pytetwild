@@ -35,11 +35,30 @@ def test_tetrahedralize_returns_unstructured_grid():
     assert grid.n_points > 0
 
 
-def test_tetrahedralize_matches_direct_api():
-    direct = pytetwild.tetrahedralize_pv(pv.Icosphere(nsub=1), edge_length_fac=1.0)
-    via_accessor = pv.Icosphere(nsub=1).tetwild.tetrahedralize(edge_length_fac=1.0)
-    assert direct.n_cells == via_accessor.n_cells
-    assert direct.n_points == via_accessor.n_points
+def test_tetrahedralize_delegates_to_tetrahedralize_pv(monkeypatch):
+    """Accessor forwards the parent mesh and kwargs to ``tetrahedralize_pv``.
+
+    fTetWild is non-deterministic across independent runs, so comparing
+    cell/point counts of two separate calls is unreliable. The accessor's
+    contract is delegation, which is what this asserts.
+    """
+    sphere = pv.Icosphere(nsub=1)
+    sentinel = pv.UnstructuredGrid()
+    calls = []
+
+    def fake_tetrahedralize_pv(mesh, **kwargs):
+        calls.append((mesh, kwargs))
+        return sentinel
+
+    monkeypatch.setattr("pytetwild.pytetwild.tetrahedralize_pv", fake_tetrahedralize_pv)
+
+    result = sphere.tetwild.tetrahedralize(edge_length_fac=1.0, optimize=False)
+
+    assert result is sentinel
+    assert len(calls) == 1
+    mesh_arg, kwargs_arg = calls[0]
+    assert mesh_arg is sphere
+    assert kwargs_arg == {"edge_length_fac": 1.0, "optimize": False}
 
 
 def test_chains_with_core_filters():
