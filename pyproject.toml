@@ -59,6 +59,11 @@ build = "cp310-* cp311-* cp312-*"  # 3.12+ are abi3 wheels
 skip = ["*musllinux*"]  # disable musl-based wheels
 test-extras = ["tests"]
 test-command = "pytest {project}/tests -v"
+# vtk (via pyvista) ships no manylinux2014 aarch64 wheel, so the
+# in-container test env cannot resolve test deps. The aarch64 wheel
+# still builds here; it is exercised by the separate test_abi3 job
+# on a native arm runner with a modern pip environment.
+test-skip = "*-manylinux_aarch64"
 
 [tool.cibuildwheel.linux]
 manylinux-x86_64-image = "manylinux2014"
