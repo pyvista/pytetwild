@@ -58,9 +58,9 @@ args = [
 testpaths = 'tests'
 # Bound any single test; a hung fTetWild call (or stalled network
 # fetch) dumps a traceback and fails instead of blocking until the
-# 6h CI ceiling. signal method can interrupt the C extension on POSIX.
+# 6h CI ceiling. Method is left to pytest-timeout: signal on POSIX
+# (can interrupt the C extension), thread on Windows (no SIGALRM).
 timeout = 300
-timeout_method = 'signal'
 
 [tool.cibuildwheel]
 archs = ["auto64"]  # 64-bit only
