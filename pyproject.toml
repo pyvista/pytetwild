@@ -62,6 +62,7 @@ test-command = "pytest {project}/tests -v"
 
 [tool.cibuildwheel.linux]
 manylinux-x86_64-image = "manylinux2014"
+manylinux-aarch64-image = "manylinux2014"
 before-all = "yum install -y gmp-devel"
 before-build = "pip install abi3audit cmake"
 repair-wheel-command = [
