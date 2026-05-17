@@ -61,6 +61,15 @@ testpaths = 'tests'
 # 6h CI ceiling. Method is left to pytest-timeout: signal on POSIX
 # (can interrupt the C extension), thread on Windows (no SIGALRM).
 timeout = 300
+# `timeout` is per-test and only arms once collection finishes, so an
+# import/collection deadlock (seen on macOS arm64: zero pytest output
+# for the full 6h ceiling) slips past it. `session_timeout` bounds the
+# whole run including collection/import and dumps every thread's
+# traceback on expiry, giving the actual hang location.
+session_timeout = 900
+# Belt-and-braces: pytest's faulthandler dumps all-thread tracebacks
+# if anything (incl. interpreter startup work) blocks this long.
+faulthandler_timeout = 600
 
 [tool.cibuildwheel]
 archs = ["auto64"]  # 64-bit only
