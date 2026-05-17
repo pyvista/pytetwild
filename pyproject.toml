@@ -34,8 +34,13 @@ pytetwild = ["py.typed"]
 
 [project.optional-dependencies]
 all = ['pyvista']
-tests = ["pytest", "pyvista", "scipy<1.17.0", "meshio"]
+tests = ["pytest", "pytest-timeout", "pyvista", "scipy<1.17.0", "meshio"]
 dev = ["pre-commit"]
+
+[project.entry-points."pyvista.accessors"]
+# Value points at the plugin module; importing it runs the
+# ``@register_dataset_accessor`` decorator as a side effect.
+tetwild = "pytetwild._accessor"
 
 [tool.scikit-build]
 build-dir = "./build"
@@ -51,6 +56,11 @@ args = [
 
 [tool.pytest.ini_options]
 testpaths = 'tests'
+# Bound any single test; a hung fTetWild call (or stalled network
+# fetch) dumps a traceback and fails instead of blocking until the
+# 6h CI ceiling. Method is left to pytest-timeout: signal on POSIX
+# (can interrupt the C extension), thread on Windows (no SIGALRM).
+timeout = 300
 
 [tool.cibuildwheel]
 archs = ["auto64"]  # 64-bit only
