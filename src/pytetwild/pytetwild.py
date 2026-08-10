@@ -1,10 +1,12 @@
 """Wrapper for fTetWild."""
 
 import warnings
-import numpy as np
-from pytetwild import PyfTetWildWrapper
 from typing import TYPE_CHECKING
+
+import numpy as np
 from numpy.typing import NDArray
+
+from pytetwild import PyfTetWildWrapper
 
 if TYPE_CHECKING:
     import pyvista as pv
@@ -55,8 +57,8 @@ def _ugrid_from_regular_cells(
             "Install PyVista to use this feature with:\n\npip install pytetwild[all]"
         )
 
-    from vtkmodules.vtkCommonCore import vtkTypeInt32Array
     from vtkmodules.util.numpy_support import numpy_to_vtk
+    from vtkmodules.vtkCommonCore import vtkTypeInt32Array
     from vtkmodules.vtkCommonDataModel import vtkCellArray
 
     if cells.ndim != 2:
