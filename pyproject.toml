@@ -104,13 +104,12 @@ repair-wheel-command = [
 ]
 
 [tool.cibuildwheel.windows]
-# CMake 3.29 cannot see the Visual Studio install on the current
-# windows-2025 image and falls back to NMake Makefiles, which is not on the
+# Unpinned, as on linux. windows-2025 now ships Visual Studio 18, and only
+# CMake 4.1 and newer carry a generator for it -- older CMake finds no
+# usable instance and falls back to NMake Makefiles, which is not on the
 # runner. Nothing in the repo changed between the last green windows build
-# on 2026-06-08 and the first red one, so this is image drift. Track the
-# CMake the image itself ships, staying under 4 for the vendored geogram.
-environment = {CMAKE_GENERATOR = "Visual Studio 17 2022"}
-before-build = "pip install \"cmake>=3.31,<4\" delvewheel abi3audit && python -c \"import os; file_path = 'build/CMakeCache.txt'; os.remove(file_path) if os.path.exists(file_path) else None\""
+# on 2026-06-08 and the first red one; the image moved off VS 2022.
+before-build = "pip install cmake delvewheel abi3audit && python -c \"import os; file_path = 'build/CMakeCache.txt'; os.remove(file_path) if os.path.exists(file_path) else None\""
 repair-wheel-command = [
   "python -c \"import shutil, os; shutil.copy(os.path.join(os.getenv('GMP_LIB'), '..', 'bin', 'mpir.dll'), '.')\" && delvewheel repair -w {dest_dir} {wheel} --add-path .",
   "bash tools/audit_wheel.sh {wheel}"

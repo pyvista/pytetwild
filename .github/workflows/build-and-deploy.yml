@@ -48,24 +48,6 @@ jobs:
           echo "GMP_INC=C:\Miniconda\envs\test\Library\include" >> ${env:GITHUB_ENV}
           echo "GMP_LIB=C:\Miniconda\envs\test\Library\lib" >> ${env:GITHUB_ENV}
 
-      - name: Diagnose Visual Studio detection (Windows)
-        if: runner.os == 'Windows'
-        shell: pwsh
-        continue-on-error: true
-        run: |
-          $vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
-          Write-Host "vswhere present: $(Test-Path $vswhere)"
-          if (Test-Path $vswhere) {
-            Write-Host "--- all instances ---"
-            & $vswhere -all -prerelease -products * -format value -property installationPath
-            Write-Host "--- with VC tools (what CMake needs) ---"
-            & $vswhere -all -prerelease -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -format value -property installationPath
-          }
-          Write-Host "--- _Instances ---"
-          Get-ChildItem "$env:ProgramData\Microsoft\VisualStudio\Packages\_Instances" -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Name
-          Write-Host "--- env of interest ---"
-          Get-ChildItem env: | Where-Object { $_.Name -match 'CONDA|VS[0-9]|VSINSTALL|VCINSTALL|ProgramData|ProgramFiles|APPDATA|CMAKE' } | Format-Table -AutoSize
-
       - name: Build wheels
         uses: pypa/cibuildwheel@v3.3.1
         env:
