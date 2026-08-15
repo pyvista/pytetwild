@@ -104,6 +104,11 @@ repair-wheel-command = [
 ]
 
 [tool.cibuildwheel.windows]
+# CMake picks a generator by probing for Visual Studio, and the 3.29 pinned
+# below does not find the 2022 install on windows-2025. It falls back to
+# NMake Makefiles, which is not on the runner, so the configure step dies on
+# a missing nmake. Name the generator instead of letting it guess.
+environment = {CMAKE_GENERATOR = "Visual Studio 17 2022"}
 before-build = "pip install cmake==3.29.* delvewheel abi3audit && python -c \"import os; file_path = 'build/CMakeCache.txt'; os.remove(file_path) if os.path.exists(file_path) else None\""
 repair-wheel-command = [
   "python -c \"import shutil, os; shutil.copy(os.path.join(os.getenv('GMP_LIB'), '..', 'bin', 'mpir.dll'), '.')\" && delvewheel repair -w {dest_dir} {wheel} --add-path .",
