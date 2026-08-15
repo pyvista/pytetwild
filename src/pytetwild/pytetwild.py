@@ -50,14 +50,15 @@ def _ugrid_from_regular_cells(
     """
     try:
         import pyvista.core as pv
-    except:
+
+        # PyVista chooses the VTK build -- stock vtkmodules or the cvista fork
+        # -- and arrays from the other one are a foreign type to the grid they
+        # are handed to, so take these names from whichever it selected.
+        from pyvista._vtk import numpy_to_vtk, vtkCellArray, vtkTypeInt32Array
+    except ImportError as exc:
         raise ModuleNotFoundError(
             "Install PyVista to use this feature with:\n\npip install pytetwild[all]"
-        )
-
-    from vtkmodules.vtkCommonCore import vtkTypeInt32Array
-    from vtkmodules.util.numpy_support import numpy_to_vtk
-    from vtkmodules.vtkCommonDataModel import vtkCellArray
+        ) from exc
 
     if cells.ndim != 2:
         raise ValueError("cells must be 2D")
@@ -67,12 +68,15 @@ def _ugrid_from_regular_cells(
 
     n_cells, n_nodes_per_cell = cells.shape
     vtk_dtype = vtkTypeInt32Array().GetDataType()
-    offsets = np.arange(0, n_cells * n_nodes_per_cell + 1, n_nodes_per_cell, dtype=np.int32)
-    offsets_vtk = numpy_to_vtk(offsets, deep=False, array_type=vtk_dtype)
     conn_vtk = numpy_to_vtk(cells.ravel(), deep=False, array_type=vtk_dtype)
 
+    # Every cell here is the same width, so VTK 9.6.2 can hold that one width
+    # instead of an offset per cell and synthesize the offsets on demand. That
+    # is an (n_cells + 1) int32 array we no longer build or keep.
     cell_array = vtkCellArray()
-    cell_array.SetData(offsets_vtk, conn_vtk)
+    if not cell_array.SetData(n_nodes_per_cell, conn_vtk):
+        offsets = np.arange(0, n_cells * n_nodes_per_cell + 1, n_nodes_per_cell, dtype=np.int32)
+        cell_array.SetData(numpy_to_vtk(offsets, deep=False, array_type=vtk_dtype), conn_vtk)
 
     if n_nodes_per_cell == 4:
         cell_type = VTK_TETRA
