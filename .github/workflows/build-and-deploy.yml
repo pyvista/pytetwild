@@ -59,8 +59,8 @@ jobs:
           path: ./wheelhouse/*.whl
           name: pytetwild-wheels-${{ matrix.os }}
 
-  test_abi3:
-    name: Test ABI3 wheels
+  test_wheels:
+    name: Test wheels on ${{ matrix.os }} py${{ matrix.python-version }}
     needs: build_wheels
     runs-on: ${{ matrix.os }}
     # Hard CI guard. Without this a collection/import deadlock burns the
@@ -70,7 +70,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ['3.13'] # , '3.14']  # skip 3.14 testing until vtk 9.6 is released
+        # one per wheel cibuildwheel produces: cp310 and cp311 are version
+        # specific, 3.13 picks up the abi3 wheel built by cp312
+        python-version: ['3.10', '3.11', '3.13'] # , '3.14']  # skip 3.14 testing until vtk 9.6 is released
         os: [ubuntu-24.04, ubuntu-24.04-arm, windows-2025, macos-latest]  # must match build_wheels os
     steps:
     - uses: actions/checkout@v6
@@ -81,19 +83,17 @@ jobs:
       with:
         pattern: pytetwild-wheels-${{ matrix.os }}
         path: wheels/
-    - name: Find ABI3 wheel
-      id: find_wheel
-      shell: bash
-      run: |
-        WHEEL=$(ls wheels/*abi3*.whl | head -n 1)
-        echo "wheel=$WHEEL" >> "$GITHUB_OUTPUT"
-    - name: Install wheel
-      run: pip install "${{ steps.find_wheel.outputs.wheel }}"
-    - name: Install test dependencies from source
+        merge-multiple: true
+    - name: Install test dependencies
+      # from the index, so the wheel install below can run offline and
+      # cannot quietly pull pytetwild from PyPI instead of wheels/
       run: |
         pip install tomli
         python tools/extract-deps.py
         pip install -r requirements-tests.txt
+    - name: Install wheel
+      # pip picks the wheel matching this interpreter out of wheels/
+      run: pip install --no-index --find-links wheels/ pytetwild
     - name: Run tests
       # -v -s + faulthandler so an import/collection hang streams progress
       # and dumps a thread stack instead of going silent for hours.
@@ -148,7 +148,7 @@ jobs:
   release:
     name: Release
     if: github.event_name == 'push' && contains(github.ref, 'refs/tags')
-    needs: [build_wheels, build_sdist]
+    needs: [build_wheels, test_wheels, build_sdist]
     runs-on: ubuntu-latest
     environment:
       name: pypi
