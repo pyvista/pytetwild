@@ -95,3 +95,5 @@ __opt.stl
 
 # nixos
 shell.nix
+# setuptools-scm writes this at build time
+src/pytetwild/_version.py
