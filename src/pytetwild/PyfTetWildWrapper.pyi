@@ -17,6 +17,9 @@ def tetrahedralize_mesh(
     quiet: bool,
     vtk_ordering: bool,
     disable_filtering: bool,
+    bg_vertices: NDArray[np.float64],
+    bg_tets: NDArray[np.int32],
+    bg_values: NDArray[np.float64],
 ) -> tuple[NDArray[np.float64], NDArray[np.int32]]: ...
 def tetrahedralize_csg(
     csg_file: str,
