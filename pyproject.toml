@@ -54,7 +54,7 @@ sdist.include = ["src/pytetwild/_version.py"]
 
 [tool.setuptools_scm]
 version_scheme = "release-branch-semver"
-write_to = "src/pytetwild/_version.py"
+version_file = "src/pytetwild/_version.py"
 
 [tool.scikit-build.cmake]
 args = [
@@ -169,7 +169,14 @@ exclude = [
 ]
 line-length = 100
 indent-width = 4
-target-version = 'py38'
+# Must track requires-python. While this said py38 ruff wanted
+# `from __future__ import annotations` for syntax that is fine on 3.10.
+target-version = 'py310'
+
+[tool.ruff.lint.per-file-ignores]
+# The stub has to be named for the nanobind module it describes, and that
+# name comes from the C++ side.
+"src/pytetwild/PyfTetWildWrapper.pyi" = ["N999"]
 
 [tool.ruff.lint]
 external = ["E131", "D102", "D105"]
