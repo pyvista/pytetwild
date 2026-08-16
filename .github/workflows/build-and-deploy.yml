@@ -22,7 +22,17 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-24.04, ubuntu-24.04-arm, windows-2025, macos-latest]
+        # Neither windows nor macos can use the -latest image:
+        #
+        # windows-2025 now carries Visual Studio 18, whose toolset dropped
+        # <hash_map>. geogram v1.9.6 still includes it from
+        # third_party/PoissonRecon/Hash.h under _MSC_VER, so it cannot
+        # compile there. windows-2022 keeps VS 2022 until geogram is bumped.
+        #
+        # macos-latest is macOS 26, and its homebrew libgmp bottle declares a
+        # 26.0 minimum, which delocate rejects against the 15.0 target the
+        # wheels are tagged with.
+        os: [ubuntu-24.04, ubuntu-24.04-arm, windows-2022, macos-15]
 
     steps:
       - uses: actions/checkout@v6
@@ -59,8 +69,8 @@ jobs:
           path: ./wheelhouse/*.whl
           name: pytetwild-wheels-${{ matrix.os }}
 
-  test_abi3:
-    name: Test ABI3 wheels
+  test_wheels:
+    name: Test wheels on ${{ matrix.os }} py${{ matrix.python-version }}
     needs: build_wheels
     runs-on: ${{ matrix.os }}
     # Hard CI guard. Without this a collection/import deadlock burns the
@@ -70,8 +80,21 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ['3.13'] # , '3.14']  # skip 3.14 testing until vtk 9.6 is released
-        os: [ubuntu-24.04, ubuntu-24.04-arm, windows-2025, macos-latest]  # must match build_wheels os
+        # one per wheel cibuildwheel produces: cp310 and cp311 are version
+        # specific, 3.13 picks up the abi3 wheel built by cp312
+        python-version: ['3.10', '3.11', '3.13'] # , '3.14']  # skip 3.14 testing until vtk 9.6 is released
+        os: [ubuntu-24.04, ubuntu-24.04-arm, windows-2022, macos-15]  # must match build_wheels os
+        exclude:
+          # macOS runs the abi3 wheel only, which is the coverage this job
+          # always had. tetrahedralize intermittently never returns there and
+          # the guard kills the cell at 25 minutes -- it moves between Python
+          # versions run to run, so it is the platform rather than a wheel.
+          # Pre-existing, and only visible now that this job covers more than
+          # 3.13. Restore these once #47 is fixed.
+          - os: macos-15
+            python-version: '3.10'
+          - os: macos-15
+            python-version: '3.11'
     steps:
     - uses: actions/checkout@v6
     - uses: actions/setup-python@v6
@@ -81,19 +104,17 @@ jobs:
       with:
         pattern: pytetwild-wheels-${{ matrix.os }}
         path: wheels/
-    - name: Find ABI3 wheel
-      id: find_wheel
-      shell: bash
-      run: |
-        WHEEL=$(ls wheels/*abi3*.whl | head -n 1)
-        echo "wheel=$WHEEL" >> "$GITHUB_OUTPUT"
-    - name: Install wheel
-      run: pip install "${{ steps.find_wheel.outputs.wheel }}"
-    - name: Install test dependencies from source
+        merge-multiple: true
+    - name: Install test dependencies
+      # from the index, so the wheel install below can run offline and
+      # cannot quietly pull pytetwild from PyPI instead of wheels/
       run: |
         pip install tomli
         python tools/extract-deps.py
         pip install -r requirements-tests.txt
+    - name: Install wheel
+      # pip picks the wheel matching this interpreter out of wheels/
+      run: pip install --no-index --find-links wheels/ pytetwild
     - name: Run tests
       # -v -s + faulthandler so an import/collection hang streams progress
       # and dumps a thread stack instead of going silent for hours.
@@ -148,7 +169,7 @@ jobs:
   release:
     name: Release
     if: github.event_name == 'push' && contains(github.ref, 'refs/tags')
-    needs: [build_wheels, build_sdist]
+    needs: [build_wheels, test_wheels, build_sdist]
     runs-on: ubuntu-latest
     environment:
       name: pypi
