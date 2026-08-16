@@ -32,8 +32,19 @@ set(fTetWild_DIR "${CMAKE_CURRENT_SOURCE_DIR}/src/fTetWild")
 # Enable aggressive optimization. -fsigned-char keeps `char` signed on
 # aarch64 (where it defaults to unsigned); fTetWild stores -1 sentinels
 # in std::array<char, 4>, which is only valid with signed char.
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -fsigned-char")
-set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} -O3 -fsigned-char")
+#
+# -ffp-contract=off is geogram's own requirement: exact predicates assume
+# every floating point operation rounds, and a fused multiply-add skips
+# one, so both its Linux platform files pass this flag and say why. The
+# Darwin ones never did, which cost nothing while macOS was x86-64, where
+# the baseline ISA has no FMA to contract into, and breaks on arm64, where
+# it does. Without it the walk in Delaunay3d::locate_inexact runs to its
+# 2500-step cycle guard on nearly every point rather than converging in a
+# few, and tetrahedralize runs for minutes instead of seconds. It goes in
+# the global flags rather than on geogram because fTetWild carries its own
+# copy of Shewchuk's predicates.c, which needs it just as much. See #47.
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -fsigned-char -ffp-contract=off")
+set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} -O3 -fsigned-char -ffp-contract=off")
 
 # Include the fTetWild project as a subdirectory
 add_subdirectory(${fTetWild_DIR} EXCLUDE_FROM_ALL)
