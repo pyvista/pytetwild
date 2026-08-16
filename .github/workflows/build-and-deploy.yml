@@ -40,6 +40,17 @@ jobs:
           submodules: true
           fetch-depth: 0  # required for setuptools-scm to see the tags
 
+      # The aarch64 before-build seds a tracked file in the fTetWild
+      # submodule, which makes the tree dirty, which makes setuptools-scm
+      # report a .devN+local version even when sitting exactly on a tag.
+      # PyPI rejects local versions, so v0.4.0 published everything except
+      # the aarch64 wheels. Pin the version from the tag instead of the
+      # working tree, which is deterministic whatever a build step touches.
+      - name: Pin the version to the tag
+        if: startsWith(github.ref, 'refs/tags/v')
+        shell: bash
+        run: echo "SETUPTOOLS_SCM_PRETEND_VERSION_FOR_PYTETWILD=${GITHUB_REF_NAME#v}" >> "$GITHUB_ENV"
+
       - name: Setup Miniconda (Windows)
         if: runner.os == 'Windows'
         uses: conda-incubator/setup-miniconda@v3.3.0
@@ -61,6 +72,9 @@ jobs:
         env:
           CIBW_ENVIRONMENT_MACOS: 'MACOSX_DEPLOYMENT_TARGET="15.0"'
           CIBW_ARCHS_MACOS: "auto"
+          # Linux builds run in a container, so the pinned version has to be
+          # handed through explicitly. Unset off a tag, which is fine.
+          CIBW_ENVIRONMENT_PASS_LINUX: SETUPTOOLS_SCM_PRETEND_VERSION_FOR_PYTETWILD
 
       - name: List generated wheels
         run: ls ./wheelhouse/*
@@ -123,6 +137,12 @@ jobs:
           submodules: true
           fetch-depth: 0  # required for setuptools-scm to see the tags
 
+      # Same reasoning as build_wheels: the tag decides the version, not the
+      # state of the working tree.
+      - name: Pin the version to the tag
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: echo "SETUPTOOLS_SCM_PRETEND_VERSION_FOR_PYTETWILD=${GITHUB_REF_NAME#v}" >> "$GITHUB_ENV"
+
       - name: Install system dependencies
         run: |
           sudo apt-get update
@@ -177,6 +197,11 @@ jobs:
           find . -name '*.tar.gz' -exec mv {} dist/ \;
       - name: Publish package distributions to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          # Uploads are per file, so one rejected wheel leaves the release
+          # half published and no re-run can ever get past the files that
+          # already landed. Skipping them lets a re-run fill in the rest.
+          skip-existing: true
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
