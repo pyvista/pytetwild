@@ -9,6 +9,7 @@
 #include <floattetwild/TriangleInsertion.h>
 #include <floattetwild/Types.hpp>
 
+#include <memory>
 #include <oneapi/tbb/global_control.h>
 #include <thread>
 
@@ -21,6 +22,7 @@
 
 #include <geogram/api/defs.h>
 #include <geogram/basic/logger.h>
+#include <geogram/mesh/mesh_AABB.h>
 #include <geogram/mesh/mesh_geometry.h>
 #include <geogram/mesh/mesh_io.h>
 #include <geogram/mesh/mesh_reorder.h>
@@ -139,7 +141,10 @@ nb::tuple Tetrahedralize(
     int loglevel,
     bool quiet,
     bool vtk_ordering,
-    bool disable_filtering) {
+    bool disable_filtering,
+    NDArray<double, 2> bg_vertices,
+    NDArray<int, 2> bg_tets,
+    NDArray<double, 1> bg_values) {
     using namespace floatTetWild;
     using namespace Eigen;
     GEO::initialize();
@@ -208,6 +213,96 @@ nb::tuple Tetrahedralize(
 
     if (!params.init(tree.get_sf_diag())) {
         throw std::runtime_error("FTetWildWrapper.cpp: Parameters initialization failed");
+    }
+
+    // Sizing field, from a background tet mesh carrying a target edge length
+    // per vertex. fTetWild declares params.get_sizing_field_value and calls it
+    // from apply_sizingfield(), but never assigns it anywhere -- the lookup
+    // that main.cpp's --bg-mesh implies is commented out in
+    // MeshImprovement.cpp, so setting apply_sizing_field alone would call an
+    // empty std::function. Supply it here, following that original: find the
+    // background tet containing the point and interpolate the target length
+    // over its four vertices. These locals outlive the optimization() call
+    // below, which is the only thing that reads the field.
+    GEO::Mesh bg_mesh;
+    std::unique_ptr<GEO::MeshCellsAABB> bg_tree;
+    Eigen::VectorXd bg_V;
+    Eigen::VectorXi bg_T;
+    Eigen::VectorXd bg_vals;
+    const size_t n_bg_verts = bg_vertices.shape(0);
+    const size_t n_bg_tets = bg_tets.shape(0);
+    if (n_bg_verts > 0 && n_bg_tets > 0) {
+        bg_V.resize(static_cast<Eigen::Index>(n_bg_verts * 3));
+        std::memcpy(bg_V.data(), bg_vertices.data(), n_bg_verts * 3 * sizeof(double));
+        bg_vals.resize(static_cast<Eigen::Index>(n_bg_verts));
+        std::memcpy(bg_vals.data(), bg_values.data(), n_bg_verts * sizeof(double));
+
+        bg_T.resize(static_cast<Eigen::Index>(n_bg_tets * 4));
+        const int *tet_src = bg_tets.data();
+        for (size_t i = 0; i < n_bg_tets * 4; ++i) {
+            if (tet_src[i] < 0 || static_cast<size_t>(tet_src[i]) >= n_bg_verts) {
+                throw std::runtime_error(
+                    "FTetWildWrapper.cpp: sizing field tetrahedron index out of range");
+            }
+            bg_T(static_cast<Eigen::Index>(i)) = tet_src[i];
+        }
+
+        bg_mesh.vertices.create_vertices(static_cast<int>(n_bg_verts));
+        for (size_t i = 0; i < n_bg_verts; ++i) {
+            GEO::vec3 &p = bg_mesh.vertices.point(static_cast<GEO::index_t>(i));
+            for (int j = 0; j < 3; ++j)
+                p[j] = bg_V(static_cast<Eigen::Index>(i * 3 + j));
+        }
+        bg_mesh.cells.create_tets(static_cast<int>(n_bg_tets));
+        for (size_t i = 0; i < n_bg_tets; ++i) {
+            for (int j = 0; j < 4; ++j) {
+                bg_mesh.cells.set_vertex(
+                    static_cast<GEO::index_t>(i),
+                    static_cast<GEO::index_t>(j),
+                    static_cast<GEO::index_t>(bg_T(static_cast<Eigen::Index>(i * 4 + j))));
+            }
+        }
+
+        // The const overload builds the tree indirectly, leaving the mesh
+        // ordering alone, so containing_tet() still returns an index into
+        // bg_T rather than into a permuted copy.
+        const GEO::Mesh &bg_mesh_ref = bg_mesh;
+        bg_tree.reset(new GEO::MeshCellsAABB(bg_mesh_ref));
+
+        params.apply_sizing_field = true;
+        params.V_sizing_field = bg_V;
+        params.T_sizing_field = bg_T;
+        params.values_sizing_field = bg_vals;
+        params.get_sizing_field_value =
+            [&bg_tree, &bg_V, &bg_T, &bg_vals](const floatTetWild::Vector3 &p) -> double {
+            const GEO::index_t t_id = bg_tree->containing_tet(GEO::vec3(p[0], p[1], p[2]));
+            if (t_id == GEO::MeshCellsAABB::NO_TET) {
+                // Outside the background mesh. Zero leaves the point at the
+                // global ideal edge length rather than collapsing it.
+                return 0.0;
+            }
+
+            const Eigen::Index base = static_cast<Eigen::Index>(t_id) * 4;
+            std::array<floatTetWild::Vector3, 4> vs;
+            for (int j = 0; j < 4; ++j) {
+                const Eigen::Index v = bg_T(base + j) * 3;
+                vs[j] = floatTetWild::Vector3(bg_V(v), bg_V(v + 1), bg_V(v + 2));
+            }
+
+            // Barycentric weight of each vertex is the point's distance from
+            // the opposite face over that vertex's distance from it.
+            double value = 0.0;
+            for (int j = 0; j < 4; ++j) {
+                const floatTetWild::Vector3 n =
+                    ((vs[(j + 1) % 4] - vs[j]).cross(vs[(j + 2) % 4] - vs[j])).normalized();
+                const double d = (vs[(j + 3) % 4] - vs[j]).dot(n);
+                if (d == 0)
+                    continue;
+                value +=
+                    std::fabs((p - vs[j]).dot(n) / d) * bg_vals(bg_T(base + (j + 3) % 4));
+            }
+            return value;
+        };
     }
 
     floatTetWild::Logger::init(!params.is_quiet, params.log_path);

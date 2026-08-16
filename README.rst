@@ -93,6 +93,36 @@ You can also work with raw arrays. Here's a simple cube that we turn into tetrah
    v_out, tetra = pytetwild.tetrahedralize(vertices, faces, optimize=False)
 
 
+Usage - Sizing Field
+--------------------
+To vary cell size across the mesh rather than using one edge length
+everywhere, pass a background tetrahedral mesh carrying the target edge
+length at each of its points. This is fTetWild's ``--bg-mesh``.
+
+.. code:: py
+
+   import numpy as np
+   import pyvista as pv
+   import pytetwild
+
+   # Background mesh covering the input, refined on one side
+   background = pv.ImageData(
+       dimensions=(5, 5, 5), spacing=(0.3, 0.3, 0.3), origin=(-0.6, -0.6, -0.6)
+   ).to_tetrahedra()
+   background.point_data["target"] = np.where(
+       background.points[:, 0] < 0, 0.04, 0.2
+   )
+
+   mesh = pytetwild.tetrahedralize_pv(
+       pv.Sphere(), sizing_field=background, sizing_field_scalars="target"
+   )
+
+The value at any point is interpolated over the background tetrahedron
+containing it, and anywhere the background mesh does not cover falls back to
+the global ideal edge length. Note this is unrelated to ``disable_filtering``,
+which keeps the internal background mesh fTetWild builds for itself.
+
+
 Usage - Options
 ---------------
 We've surfaced a several parameters to each of our interfaces
@@ -131,6 +161,17 @@ We've surfaced a several parameters to each of our interfaces
         Set log level (0 = most verbose, 6 = minimal output).
     quiet : bool, default: False
         Disable all output. Overrides ``loglevel``.
+    sizing_field : pv.UnstructuredGrid, optional
+        ``tetrahedralize_pv`` only. All-tetrahedral mesh supplying a
+        spatially varying target edge length. Requires ``optimize=True``.
+    sizing_field_scalars : str, optional
+        ``tetrahedralize_pv`` only. Name of the point array on
+        ``sizing_field`` holding the target edge length. Defaults to its
+        active point scalars.
+    bg_vertices, bg_tets, bg_values : np.ndarray, optional
+        ``tetrahedralize`` only. The same sizing field as raw arrays:
+        points ``(n, 3)``, tetrahedra ``(m, 4)``, and the target edge
+        length at each point ``(n,)``.
 
 
 
