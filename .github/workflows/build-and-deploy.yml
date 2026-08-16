@@ -38,6 +38,7 @@ jobs:
       - uses: actions/checkout@v6
         with:
           submodules: true
+          fetch-depth: 0  # required for setuptools-scm to see the tags
 
       - name: Setup Miniconda (Windows)
         if: runner.os == 'Windows'
@@ -120,6 +121,7 @@ jobs:
       - uses: actions/checkout@v6
         with:
           submodules: true
+          fetch-depth: 0  # required for setuptools-scm to see the tags
 
       - name: Install system dependencies
         run: |
