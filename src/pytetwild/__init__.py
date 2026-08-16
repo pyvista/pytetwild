@@ -1,7 +1,7 @@
 """Wrapper for fTetWild."""
 
-from .pytetwild import tetrahedralize, tetrahedralize_pv, tetrahedralize_csg  # noqa: F401
 from . import _accessor as _accessor
+from .pytetwild import tetrahedralize, tetrahedralize_csg, tetrahedralize_pv  # noqa: F401
 
 try:
     # Written by setuptools-scm at build time

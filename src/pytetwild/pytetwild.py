@@ -1,10 +1,12 @@
 """Wrapper for fTetWild."""
 
 import warnings
-import numpy as np
-from pytetwild import PyfTetWildWrapper
 from typing import TYPE_CHECKING
+
+import numpy as np
 from numpy.typing import NDArray
+
+from pytetwild import PyfTetWildWrapper
 
 if TYPE_CHECKING:
     import pyvista as pv

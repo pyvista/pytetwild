@@ -269,10 +269,10 @@ nb::tuple Tetrahedralize(
         const GEO::Mesh &bg_mesh_ref = bg_mesh;
         bg_tree.reset(new GEO::MeshCellsAABB(bg_mesh_ref));
 
+        // Only these two matter. The V/T/values_sizing_field members that
+        // main.cpp fills in are read by nothing in fTetWild, so setting them
+        // here would be dead weight.
         params.apply_sizing_field = true;
-        params.V_sizing_field = bg_V;
-        params.T_sizing_field = bg_T;
-        params.values_sizing_field = bg_vals;
         params.get_sizing_field_value =
             [&bg_tree, &bg_V, &bg_T, &bg_vals](const floatTetWild::Vector3 &p) -> double {
             const GEO::index_t t_id = bg_tree->containing_tet(GEO::vec3(p[0], p[1], p[2]));

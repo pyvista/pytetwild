@@ -2,7 +2,8 @@
 
 import tomli
 
-data = tomli.load(open("pyproject.toml", "rb"))
+with open("pyproject.toml", "rb") as f:
+    data = tomli.load(f)
 deps = data["project"]["optional-dependencies"]["tests"]
 with open("requirements-tests.txt", "w") as f:
     f.write("\n".join(deps))

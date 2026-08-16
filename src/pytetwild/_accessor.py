@@ -14,7 +14,6 @@ from typing import Any
 
 import pyvista as pv
 
-
 HAS_ACCESSOR_REGISTRY = hasattr(pv, "register_dataset_accessor")
 
 
