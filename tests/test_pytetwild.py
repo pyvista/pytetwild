@@ -2,10 +2,10 @@ import sys
 import math
 from typing import Callable
 import os
+import importlib
 import numpy as np
 from numpy.typing import NDArray
 import pyvista as pv
-import vtk
 from scipy.spatial import KDTree
 import pytest
 from pytetwild import tetrahedralize_pv, tetrahedralize, tetrahedralize_csg
@@ -84,8 +84,33 @@ def test_tetrahedralize(mesh_generator: Callable):
     assert len(tetrahedra_result) > 0, "There should be more than 0 tetrahedra in the result"
 
 
+def _vtk_class(name: str, module: str):
+    """Return a VTK class from the build PyVista selected.
+
+    PyVista may sit on stock ``vtkmodules`` or on the ``cvista`` fork, which
+    exposes its classes off the package root. A filter from the build PyVista
+    is not using rejects the meshes PyVista hands it.
+
+    Skips the calling test when the selected build does not ship the class:
+    cvista trims parts of VTK that stock ships, so a name present in one is
+    not guaranteed in the other.
+    """
+    from pyvista import _vtk
+
+    root = getattr(_vtk, "_VTK_ROOT", "vtkmodules")
+    if getattr(_vtk, "_VTK_ROOT_IS_FLAT", False):
+        owner = importlib.import_module(root)
+    else:
+        owner = importlib.import_module(f"{root}.{module}")
+
+    try:
+        return getattr(owner, name)
+    except AttributeError:
+        pytest.skip(f"{root} does not ship {name}")
+
+
 def _sample_points_vtk(mesh_pv: pv.PolyData, dist_btw_pts: float = 0.01) -> NDArray[np.float64]:
-    point_sampler = vtk.vtkPolyDataPointSampler()
+    point_sampler = _vtk_class("vtkPolyDataPointSampler", "vtkFiltersModeling")()
     point_sampler.SetInputData(mesh_pv)
     point_sampler.SetDistance(dist_btw_pts)
     point_sampler.SetPointGenerationMode(point_sampler.REGULAR_GENERATION)
@@ -168,3 +193,20 @@ def test_disable_filtering() -> None:
 
     assert np.isclose(vol_wo_background, 1.0, rtol=0.01)
     assert vol_with_background > 1.1
+
+
+def test_ugrid_from_regular_cells_fixed_width() -> None:
+    """Cells of one width are stored without an offset array."""
+    from pytetwild.pytetwild import _ugrid_from_regular_cells
+
+    rng = np.random.default_rng(0)
+    points = rng.random((40, 3))
+    tets = rng.integers(0, 40, size=(25, 4)).astype(np.int32)
+
+    grid = _ugrid_from_regular_cells(points, tets)
+
+    assert grid.GetCells().IsStorageFixedSize()
+    assert grid.n_cells == 25
+    # the offsets VTK synthesizes have to match the ones we no longer build
+    assert np.array_equal(grid.offset, np.arange(0, 26 * 4, 4))
+    assert np.array_equal(grid.cells_dict[10], tets)
