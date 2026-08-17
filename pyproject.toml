@@ -34,7 +34,7 @@ pytetwild = ["py.typed"]
 
 [project.optional-dependencies]
 all = ['pyvista']
-tests = ["pytest", "pytest-timeout", "pyvista", "scipy<1.17.0", "meshio"]
+tests = ["pytest", "pytest-timeout", "pyvista>=0.48", "scipy<1.17.0", "meshio"]
 dev = ["pre-commit"]
 
 [project.entry-points."pyvista.accessors"]
