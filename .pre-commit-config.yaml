@@ -15,7 +15,7 @@ repos:
 
 - repo: https://github.com/numpy/numpydoc
   # Held at the latest stable; autoupdate picks up v1.11.0rc0 otherwise
-  rev: v1.10.0
+  rev: v1.11.0rc0
   hooks:
   - id: numpydoc-validation
     files: ^src/pytetwild
