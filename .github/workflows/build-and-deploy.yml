@@ -58,7 +58,14 @@ jobs:
       - name: Install Dependencies (Windows)
         if: runner.os == 'Windows'
         shell: powershell
-        run: conda install -c conda-forge mpir zlib -y
+        # vc14_runtime is pinned because delvewheel resolves
+        # msvcp140/concrt140 off PATH, and this env is on it, so whatever
+        # conda-forge last published is what gets vendored into the wheel.
+        # It moved 14.44 -> 14.51 on 2026-07-29 and shipped in v0.4.1
+        # without a single repo change. 14.44 is the toolset that compiles
+        # the extension on windows-2022, so keep the two in step.
+        # tools/check_vendored_crt.py enforces this.
+        run: conda install -c conda-forge mpir zlib "vc14_runtime=14.44.35208" -y
 
       - name: Set env (Windows)
         if: runner.os == 'Windows'

@@ -117,10 +117,16 @@ repair-wheel-command = [
 # runner and fell back to NMake Makefiles, which is not installed. Nothing
 # in the repo changed between the last green windows build on 2026-06-08
 # and the first red one; the images moved under it.
-before-build = "pip install cmake delvewheel abi3audit && python -c \"import os; file_path = 'build/CMakeCache.txt'; os.remove(file_path) if os.path.exists(file_path) else None\""
+before-build = "pip install cmake delvewheel abi3audit pefile && python -c \"import os; file_path = 'build/CMakeCache.txt'; os.remove(file_path) if os.path.exists(file_path) else None\""
 repair-wheel-command = [
   "python -c \"import shutil, os; shutil.copy(os.path.join(os.getenv('GMP_LIB'), '..', 'bin', 'mpir.dll'), '.')\" && delvewheel repair -w {dest_dir} {wheel} --add-path .",
-  "bash tools/audit_wheel.sh {wheel}"
+  "bash tools/audit_wheel.sh {wheel}",
+  # delvewheel resolves msvcp140/concrt140 off PATH, where the active conda
+  # env sits, so their version tracks whatever conda-forge last published
+  # rather than the toolset that compiled the extension. delvewheel only
+  # warns when the redist it finds is *older* than that toolset, so the
+  # conda case goes by silently. Check the other direction here.
+  "python tools/check_vendored_crt.py {dest_dir}"
 ]
 
 
